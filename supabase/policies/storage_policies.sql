@@ -1,1 +1,1 @@
--- Storage RLS buckets control
+-- Storage policies placeholders (Usually executed via Supabase storage schema)

@@ -1,8 +1,14 @@
 export const csrfService = {
   getToken() {
-    return 'csrf-placeholder-token';
+    let token = localStorage.getItem('csrf_token');
+    if (!token) {
+      token = crypto.randomUUID();
+      localStorage.setItem('csrf_token', token);
+    }
+    return token;
   },
-  validateToken() {
-    return true;
+  validateToken(inputToken) {
+    const storedToken = localStorage.getItem('csrf_token');
+    return storedToken === inputToken;
   }
 };

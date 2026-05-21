@@ -1,12 +1,12 @@
 -- Schema for Roles
 CREATE TABLE IF NOT EXISTS public.roles (
-  id TEXT PRIMARY KEY,
+  id TEXT PRIMARY KEY CHECK (id IN ('admin', 'participant')),
   role_name TEXT UNIQUE NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Insert pre-defined roles
+-- Default Roles
 INSERT INTO public.roles (id, role_name) VALUES
   ('admin', 'Administrador'),
   ('participant', 'Participante')
-ON CONFLICT DO NOTHING;
+ON CONFLICT (id) DO NOTHING;

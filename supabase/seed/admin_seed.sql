@@ -1,1 +1,1 @@
--- SQL to assign first admin account manually if needed
+-- Admin seeding procedures

@@ -1,1 +1,1 @@
--- Initial FAQ data (SQL format, ready for seeding)
+-- Initial FAQ seed data

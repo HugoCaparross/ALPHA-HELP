@@ -1,1 +1,1 @@
--- Initial settings parameters
+-- Default platform settings

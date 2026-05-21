@@ -1,1 +1,2 @@
--- Initial Sessions data (SQL format, ready for seeding)
+-- Initial Sessions seed data
+-- Populated dynamically on deployment

@@ -1,1 +1,1 @@
--- Notifications auto trigger
+-- Trigger placeholder for notifications logs
