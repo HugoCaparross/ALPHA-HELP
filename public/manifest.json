@@ -1,0 +1,16 @@
+{
+  "name": "ALPHA-HELP",
+  "short_name": "ALPHA-HELP",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B0F19",
+  "theme_color": "#3B82F6",
+  "description": "Plataforma profesional de ayuda e intervención",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

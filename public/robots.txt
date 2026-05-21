@@ -1,0 +1,7 @@
+# robots.txt for ALPHA-HELP
+User-agent: *
+Allow: /
+Disallow: /src/pages/protected/
+Disallow: /src/pages/admin/
+
+Sitemap: http://localhost:3000/sitemap.xml

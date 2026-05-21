@@ -1,0 +1,1 @@
+-- SQL Function to validate questionnaire completeness

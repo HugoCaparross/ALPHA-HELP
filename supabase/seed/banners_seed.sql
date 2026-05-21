@@ -1,0 +1,1 @@
+-- Initial Banners data (SQL format, ready for seeding)

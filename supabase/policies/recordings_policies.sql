@@ -1,0 +1,1 @@
+ALTER TABLE public.recordings ENABLE ROW LEVEL SECURITY;

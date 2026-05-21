@@ -1,0 +1,1 @@
+-- SQL Function for intervention assignments

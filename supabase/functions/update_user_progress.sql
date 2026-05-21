@@ -1,0 +1,1 @@
+-- SQL Function for user progress tracking

@@ -1,0 +1,10 @@
+/* Estilos modulares para pantallas de login, registro, etc. */
+.auth-container {
+  max-width: 450px;
+  margin: 4rem auto;
+  padding: 2rem;
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--bg-tertiary);
+}

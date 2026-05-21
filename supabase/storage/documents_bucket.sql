@@ -1,0 +1,1 @@
+-- Buckets definition SQL for user documents

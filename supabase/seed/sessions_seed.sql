@@ -1,0 +1,1 @@
+-- Initial Sessions data (SQL format, ready for seeding)

@@ -1,0 +1,1 @@
+-- Automated audit log trigger for administration changes
