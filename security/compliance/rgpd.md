@@ -1,1 +1,0 @@
-# Cumplimiento de RGPD

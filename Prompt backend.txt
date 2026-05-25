@@ -1,0 +1,636 @@
+Quiero que actúes como un arquitecto senior full-stack y DevOps profesional especializado en:
+- Supabase
+- PostgreSQL
+- Seguridad web
+- Arquitecturas escalables
+- Vite
+- Vanilla JavaScript
+- Vercel
+- GitHub
+
+Tu objetivo es crear COMPLETAMENTE la infraestructura profesional REAL del proyecto "ALPHA-HELP".
+
+==================================================
+CREDENCIALES SUPABASE
+==================================================
+
+VITE_SUPABASE_URL:
+https://taonhrfhcfnrkcoskziu.supabase.co
+
+VITE_SUPABASE_ANON_KEY:
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRhb25ocmZoY2Zucmtjb3Nreml1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNTU4NDUsImV4cCI6MjA5NDkzMTg0NX0.0wxQz4BtM5hTRncdVttPi8R44mMFVRXz-Ac2YHGQZy0
+
+SUPABASE_SERVICE_ROLE_KEY:
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRhb25ocmZoY2Zucmtjb3Nreml1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTM1NTg0NSwiZXhwIjoyMDk0OTMxODQ1fQ.ZXYd-8rkhy-alRhei5dh3AqzobZiKo_f4dXX9KFf7Po
+
+==================================================
+OBJETIVO GENERAL
+==================================================
+
+Quiero que construyas:
+
+1. Arquitectura completa del proyecto
+2. Base de datos completa en Supabase
+3. Sistema de autenticación completo
+4. Seguridad profesional
+5. Roles y permisos
+6. RLS policies
+7. SQL functions
+8. SQL triggers
+9. Buckets storage
+10. Conexión frontend ↔ backend
+11. GitHub repository
+12. Proyecto listo para producción
+
+==================================================
+IMPORTANTE
+==================================================
+
+NO quiero:
+- mocks
+- placeholders
+- lorem ipsum
+- datos falsos
+- hardcodeos
+- APIs fake
+- ejemplos inventados
+- contenido temporal
+
+TODO debe ser:
+- real
+- escalable
+- limpio
+- mantenible
+- production-ready
+
+==================================================
+STACK OBLIGATORIO
+==================================================
+
+Frontend:
+- Vite
+- Vanilla JavaScript
+- CSS modular puro
+
+Backend:
+- Supabase
+- PostgreSQL
+
+Deploy:
+- Vercel
+
+Repositorio:
+- GitHub
+
+==================================================
+ESTRUCTURA OBLIGATORIA DEL PROYECTO
+==================================================
+
+MUY IMPORTANTE:
+
+Debes crear EXACTAMENTE la estructura de archivos y carpetas definida para el proyecto ALPHA-HELP.
+
+NO simplificar.
+NO eliminar archivos.
+NO reorganizar carpetas.
+NO cambiar nombres.
+NO crear una arquitectura distinta.
+
+La estructura completa del proyecto ya está definida y es OBLIGATORIA.
+
+Debes respetar:
+- nombres
+- carpetas
+- jerarquía
+- módulos
+- separación arquitectura
+- estructura Supabase
+- estructura seguridad
+- estructura frontend
+- estructura admin
+- estructura auth
+- estructura SQL
+
+==================================================
+ESTRUCTURA OBLIGATORIA
+==================================================
+
+Crear EXACTAMENTE la estructura definida previamente para ALPHA-HELP incluyendo:
+
+- public/
+- src/
+- assets/
+- styles/
+- components/
+- pages/
+- routes/
+- auth/
+- services/
+- modules/
+- utils/
+- seo/
+- supabase/
+- security/
+- tests/
+
+Y toda su estructura interna.
+
+==================================================
+FASE 1 — CREAR PROYECTO
+==================================================
+
+1. Crear proyecto Vite Vanilla JS
+2. Configurar estructura profesional
+3. Instalar dependencias necesarias
+4. Configurar aliases
+5. Configurar Vercel
+6. Configurar package.json
+7. Configurar vite.config.js
+8. Configurar .gitignore
+9. Crear .env.example
+10. Crear README profesional
+11. Crear LICENSE
+12. Inicializar Git
+13. Crear repositorio GitHub privado
+14. Realizar primer commit
+15. Push automático
+
+==================================================
+AUTENTICACIÓN
+==================================================
+
+Configurar sistema COMPLETO:
+
+1. Registro
+2. Login
+3. Logout
+4. Remember me
+5. Forgot password
+6. Reset password
+7. Session persistence
+8. Refresh tokens
+9. Auth listeners
+10. Session recovery
+
+==================================================
+EMAIL VERIFICATION OBLIGATORIA
+==================================================
+
+NO permitir acceso si:
+- email no existe
+- email no verificado
+
+Implementar:
+1. email verification obligatoria
+2. bloqueo acceso hasta verificación
+3. reenvío email verificación
+4. validación frontend y backend
+
+==================================================
+POLÍTICA DE CONTRASEÑAS
+==================================================
+
+Implementar política REAL:
+
+OBLIGATORIO:
+- mínimo 12 caracteres
+- mayúscula
+- minúscula
+- número
+- símbolo
+
+Además:
+- password strength meter
+- validación frontend
+- validación backend
+- protección passwords débiles
+
+==================================================
+SEGURIDAD AVANZADA
+==================================================
+
+Implementar:
+
+1. Row Level Security (RLS)
+2. Protección XSS
+3. Protección CSRF
+4. Sanitización inputs
+5. Rate limiting
+6. Protección brute force
+7. Security headers
+8. Content Security Policy (CSP)
+9. Protección sesiones
+10. Protección rutas admin
+11. Protección manipulación frontend
+12. Auditoría cambios
+13. Logs administrativos
+
+==================================================
+TIPOS DE USUARIO
+==================================================
+
+Crear sistema roles:
+
+1. participant
+2. admin
+
+==================================================
+INTERVENCIONES
+==================================================
+
+Existen:
+1. España
+2. Latinoamérica
+
+Durante el registro:
+- usuario selecciona procedencia
+- sistema asigna automáticamente intervención
+
+==================================================
+SESIONES
+==================================================
+
+La plataforma tendrá:
+- 9 sesiones
+- 1 por mes
+
+Cada sesión:
+- título
+- descripción
+- fecha
+- vídeo YouTube directo
+- grabación
+- desbloqueo progresivo
+- estado
+
+IMPORTANTE:
+NO hardcodear sesiones.
+
+TODO debe salir de base de datos.
+
+==================================================
+DESBLOQUEO PROGRESIVO
+==================================================
+
+Implementar lógica real:
+
+- una sesión desbloqueada por mes
+- cálculo automático sesiones disponibles
+- próxima sesión
+- sesiones completadas
+- sesiones bloqueadas
+
+==================================================
+BANNERS DINÁMICOS
+==================================================
+
+Crear sistema dinámico editable desde admin:
+- próxima sesión
+- recordatorios
+- avisos
+- mensajes admin
+- cambios intervención
+
+==================================================
+CUESTIONARIOS PRE Y POST
+==================================================
+
+La plataforma tendrá:
+1. PRE questionnaire
+2. POST questionnaire
+
+==================================================
+IDENTIFICACIÓN SEGURA DE USUARIO
+==================================================
+
+NO usar:
+- nombre
+- apellido
+- email
+
+como identificador principal.
+
+Usar SIEMPRE:
+auth.users.id
+
+UUID único de Supabase Auth.
+
+==================================================
+QUESTIONNAIRE ATTEMPTS
+==================================================
+
+Crear tabla:
+questionnaire_attempts
+
+Debe contener:
+- id
+- user_id
+- questionnaire_id
+- questionnaire_type
+- status
+- answers
+- started_at
+- completed_at
+
+==================================================
+RELACIÓN OBLIGATORIA
+==================================================
+
+user_id debe relacionarse mediante foreign key con:
+auth.users.id
+
+==================================================
+VALIDACIONES CUESTIONARIOS
+==================================================
+
+Implementar:
+1. impedir duplicados
+2. impedir reenvíos
+3. impedir cuestionarios anónimos
+4. guardar progreso
+5. detectar incompletos
+6. comparación PRE vs POST
+7. analytics individuales
+8. analytics globales
+
+==================================================
+ANALYTICS
+==================================================
+
+Permitir:
+- comparar PRE y POST mismo usuario
+- evolución individual
+- estadísticas globales
+- estadísticas España
+- estadísticas Latinoamérica
+
+==================================================
+ADMIN PANEL
+==================================================
+
+Crear backend COMPLETO para panel admin.
+
+Admin podrá:
+- gestionar usuarios
+- gestionar sesiones
+- gestionar grabaciones
+- gestionar banners
+- gestionar cuestionarios
+- gestionar landing
+- gestionar contenido
+- gestionar FAQs
+- gestionar notificaciones
+- ver analytics
+- ver logs
+
+==================================================
+LANDING DINÁMICA
+==================================================
+
+NO hardcodear contenido.
+
+Todo editable desde admin:
+- hero
+- textos
+- equipo
+- FAQs
+- contenidos legales
+- intervención
+- banners
+
+==================================================
+BASE DE DATOS
+==================================================
+
+Crear TODAS las tablas necesarias:
+
+1. users
+2. roles
+3. interventions
+4. sessions
+5. recordings
+6. questionnaires
+7. questionnaire_attempts
+8. banners
+9. notifications
+10. faq
+11. contact_messages
+12. content
+13. audit_logs
+14. settings
+15. user_progress
+16. session_access
+17. user_sessions
+18. password_resets
+19. email_verifications
+20. admin_actions
+
+==================================================
+RELACIONES SQL
+==================================================
+
+Implementar correctamente:
+- usuarios ↔ intervenciones
+- usuarios ↔ sesiones
+- usuarios ↔ cuestionarios
+- sesiones ↔ grabaciones
+- usuarios ↔ progreso
+- admin ↔ logs
+
+==================================================
+RLS POLICIES
+==================================================
+
+Configurar correctamente:
+
+PARTICIPANTS:
+- solo acceder a sus datos
+- solo acceder a sus sesiones
+- solo acceder a sus cuestionarios
+- solo editar perfil propio
+
+ADMIN:
+- acceso administrativo completo
+- gestión usuarios
+- gestión contenido
+- analytics
+- logs
+
+==================================================
+FUNCTIONS SQL
+==================================================
+
+Crear:
+
+1. assign_intervention()
+2. unlock_next_session()
+3. validate_questionnaire()
+4. prevent_duplicate_questionnaire()
+5. create_user_profile()
+6. update_user_progress()
+7. generate_notifications()
+8. update_banner()
+9. admin_stats()
+10. audit_log_trigger()
+11. verify_user_email()
+12. create_session_access()
+13. validate_password_policy()
+14. sync_user_role()
+15. get_available_sessions()
+
+==================================================
+TRIGGERS SQL
+==================================================
+
+Crear:
+
+1. on_auth_user_created
+2. questionnaire_completed
+3. session_unlocked
+4. admin_changes
+5. notification_trigger
+6. user_verified
+7. password_reset_trigger
+8. user_progress_updated
+
+==================================================
+SUPABASE STORAGE
+==================================================
+
+Crear buckets:
+
+1. recordings
+2. avatars
+3. documents
+4. legal-files
+
+Con policies seguras.
+
+==================================================
+SERVICES FRONTEND
+==================================================
+
+Conectar correctamente:
+
+- client.js
+- auth.service.js
+- users.service.js
+- sessions.service.js
+- recordings.service.js
+- questionnaires.service.js
+- notifications.service.js
+- content.service.js
+- analytics.service.js
+- storage.service.js
+
+==================================================
+AUTH FRONTEND
+==================================================
+
+Conectar:
+- login
+- registro
+- logout
+- remember me
+- forgot password
+- reset password
+- auth guards
+- admin guards
+- role guards
+- auth listeners
+- session persistence
+
+==================================================
+VALIDACIONES
+==================================================
+
+Implementar:
+- email validation
+- password validation
+- form sanitization
+- anti duplicate requests
+- questionnaire validation
+- role validation
+- session validation
+
+==================================================
+SEO Y GOOGLE
+==================================================
+
+Preparar:
+- robots.txt
+- sitemap.xml
+- meta tags
+- structured data
+- accessibility
+- manifest
+- favicon
+- responsive
+
+==================================================
+SUPABASE
+==================================================
+
+Crear:
+- schema SQL
+- policies SQL
+- triggers SQL
+- functions SQL
+- storage buckets SQL
+
+exactamente siguiendo la estructura definida.
+
+==================================================
+VALIDACIÓN FINAL OBLIGATORIA
+==================================================
+
+ANTES de finalizar:
+
+1. Ejecutar npm install
+2. Ejecutar npm run dev
+3. Comprobar imports
+4. Validar SQL
+5. Validar Auth
+6. Validar conexión Supabase
+7. Validar RLS
+8. Validar relaciones
+9. Validar buckets
+10. Validar frontend connection
+11. Validar restricciones cuestionarios PRE/POST
+12. Validar seguridad admin
+13. Validar email verification
+
+==================================================
+ENTREGA FINAL
+==================================================
+
+Mostrar:
+- URL GitHub
+- estructura creada
+- tablas creadas
+- relaciones SQL
+- functions
+- triggers
+- policies
+- buckets
+- dependencias instaladas
+- estado final proyecto
+
+==================================================
+RESULTADO FINAL
+==================================================
+
+Quiero:
+- backend real
+- arquitectura profesional
+- seguridad real
+- Supabase correctamente conectado
+- producción ready
+- limpio
+- mantenible
+- escalable
+- sin hardcodeos
+- sin datos falsos
+- preparado para crecimiento futuro
+- preparado para análisis PRE/POST reales
+- preparado para usuarios reales

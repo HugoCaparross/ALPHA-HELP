@@ -1,1 +1,0 @@
--- Trigger placeholder for notifications logs

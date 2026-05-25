@@ -1,1 +1,0 @@
--- Initial dynamic banners parameters

@@ -1,2 +1,0 @@
--- Initial Sessions seed data
--- Populated dynamically on deployment

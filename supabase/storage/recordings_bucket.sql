@@ -1,2 +1,0 @@
--- SQL scripts to declare buckets in Supabase Storage
--- INSERT INTO storage.buckets (id, name, public) VALUES ('recordings', 'recordings', false) ON CONFLICT DO NOTHING;

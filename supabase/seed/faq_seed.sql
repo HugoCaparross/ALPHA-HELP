@@ -1,1 +1,0 @@
--- Initial FAQ seed data

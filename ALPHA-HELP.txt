@@ -1,114 +1,28 @@
 ALPHA-HELP/
 │
 ├── public/
-│   │
 │   ├── favicon.ico
-│   ├── robots.txt
-│   ├── sitemap.xml
-│   ├── manifest.json
 │   ├── og-image.jpg
-│   ├── apple-touch-icon.png
-│   └── site.webmanifest
+│   ├── robots.txt
+│   └── sitemap.xml
 │
 ├── src/
 │   │
-│   ├── main.js
-│   ├── app.js
+│   ├── main.js                  # Entry point: init router + auth listener
 │   │
 │   ├── assets/
-│   │   │
 │   │   ├── images/
-│   │   │   ├── logos/
-│   │   │   ├── team/
-│   │   │   ├── backgrounds/
-│   │   │   ├── illustrations/
-│   │   │   ├── icons/
-│   │   │   └── placeholders/
-│   │   │
-│   │   ├── videos/
-│   │   │   └── intro/
-│   │   │
-│   │   └── animations/
-│   │       ├── lottie/
-│   │       └── transitions/
+│   │   │   └── logo.svg
+│   │   └── icons/               # Solo los SVG que se usen
 │   │
 │   ├── styles/
-│   │   │
-│   │   ├── global.css
-│   │   ├── variables.css
-│   │   ├── typography.css
-│   │   ├── animations.css
-│   │   ├── responsive.css
-│   │   │
+│   │   ├── base.css             # Variables + reset + tipografía
+│   │   ├── components.css       # Modal, toast, loader, acordeón, botones
 │   │   ├── auth.css
-│   │   ├── landing.css
 │   │   ├── dashboard.css
 │   │   ├── sessions.css
-│   │   ├── questionnaires.css
 │   │   ├── admin.css
-│   │   ├── faq.css
-│   │   ├── contact.css
 │   │   └── legal.css
-│   │
-│   ├── components/
-│   │   │
-│   │   ├── layout/
-│   │   │   ├── navbar.js
-│   │   │   ├── sidebar.js
-│   │   │   ├── footer.js
-│   │   │   ├── mobile-menu.js
-│   │   │   └── protected-layout.js
-│   │   │
-│   │   ├── ui/
-│   │   │   ├── modal.js
-│   │   │   ├── toast.js
-│   │   │   ├── loader.js
-│   │   │   ├── skeleton.js
-│   │   │   ├── banner.js
-│   │   │   ├── dropdown.js
-│   │   │   ├── accordion.js
-│   │   │   ├── tabs.js
-│   │   │   ├── tooltip.js
-│   │   │   ├── pagination.js
-│   │   │   ├── searchbar.js
-│   │   │   ├── confirm-dialog.js
-│   │   │   └── empty-state.js
-│   │   │
-│   │   ├── forms/
-│   │   │   ├── login-form.js
-│   │   │   ├── register-form.js
-│   │   │   ├── forgot-password-form.js
-│   │   │   ├── reset-password-form.js
-│   │   │   ├── contact-form.js
-│   │   │   ├── questionnaire-form.js
-│   │   │   └── validation-feedback.js
-│   │   │
-│   │   ├── sessions/
-│   │   │   ├── session-card.js
-│   │   │   ├── session-player.js
-│   │   │   ├── session-lock.js
-│   │   │   ├── session-progress.js
-│   │   │   ├── session-calendar.js
-│   │   │   └── next-session-banner.js
-│   │   │
-│   │   ├── admin/
-│   │   │   ├── admin-sidebar.js
-│   │   │   ├── users-table.js
-│   │   │   ├── sessions-table.js
-│   │   │   ├── banners-table.js
-│   │   │   ├── questionnaire-table.js
-│   │   │   ├── content-editor.js
-│   │   │   ├── analytics-cards.js
-│   │   │   └── admin-logs.js
-│   │   │
-│   │   └── landing/
-│   │       ├── hero.js
-│   │       ├── about.js
-│   │       ├── team.js
-│   │       ├── intervention.js
-│   │       ├── faq-preview.js
-│   │       ├── testimonials.js
-│   │       └── legal-preview.js
 │   │
 │   ├── pages/
 │   │   │
@@ -117,263 +31,57 @@ ALPHA-HELP/
 │   │   │   ├── register.html
 │   │   │   ├── forgot-password.html
 │   │   │   ├── reset-password.html
-│   │   │   ├── privacy-policy.html
-│   │   │   ├── cookies-policy.html
+│   │   │   ├── privacy.html
+│   │   │   ├── cookies.html
 │   │   │   ├── legal-notice.html
-│   │   │   ├── terms-and-conditions.html
-│   │   │   ├── accessibility.html
-│   │   │   ├── 404.html
-│   │   │   └── 500.html
+│   │   │   ├── terms.html
+│   │   │   └── 404.html
 │   │   │
-│   │   ├── protected/
+│   │   ├── app/                 # Zona privada del usuario
 │   │   │   ├── dashboard.html
 │   │   │   ├── sessions.html
-│   │   │   ├── recordings.html
-│   │   │   ├── questionnaires.html
+│   │   │   ├── resources.html   # Grabaciones + recursos en una sola página
 │   │   │   ├── faq.html
 │   │   │   ├── contact.html
-│   │   │   ├── profile.html
-│   │   │   ├── notifications.html
-│   │   │   ├── intervention-info.html
-│   │   │   └── settings.html
+│   │   │   └── profile.html
 │   │   │
-│   │   └── admin/
-│   │       ├── admin-dashboard.html
-│   │       ├── users-management.html
-│   │       ├── sessions-management.html
-│   │       ├── recordings-management.html
-│   │       ├── banners-management.html
-│   │       ├── questionnaire-management.html
-│   │       ├── intervention-management.html
-│   │       ├── notifications-management.html
-│   │       ├── content-management.html
-│   │       ├── analytics.html
-│   │       ├── audit-logs.html
-│   │       └── settings.html
+│   │   └── admin/               # Zona privada del admin
+│   │       ├── dashboard.html
+│   │       ├── users.html
+│   │       ├── sessions.html
+│   │       └── announcements.html
 │   │
-│   ├── routes/
-│   │   ├── router.js
-│   │   ├── auth-guard.js
-│   │   ├── admin-guard.js
-│   │   └── role-guard.js
+│   ├── components/
+│   │   ├── layout.js            # Sidebar + footer + layout protegido
+│   │   ├── ui.js                # Modal + toast + loader + empty-state
+│   │   └── forms.js             # Todos los formularios + validación visual
 │   │
-│   ├── auth/
-│   │   │
-│   │   ├── login.js
-│   │   ├── register.js
-│   │   ├── logout.js
-│   │   ├── forgot-password.js
-│   │   ├── reset-password.js
-│   │   ├── session.js
-│   │   ├── remember-me.js
-│   │   ├── email-verification.js
-│   │   ├── password-security.js
-│   │   ├── password-strength.js
-│   │   ├── brute-force-protection.js
-│   │   ├── auth-listeners.js
-│   │   └── role-manager.js
-│   │
-│   ├── services/
-│   │   │
-│   │   ├── supabase/
-│   │   │   ├── client.js
-│   │   │   ├── auth.service.js
-│   │   │   ├── users.service.js
-│   │   │   ├── sessions.service.js
-│   │   │   ├── recordings.service.js
-│   │   │   ├── questionnaires.service.js
-│   │   │   ├── interventions.service.js
-│   │   │   ├── notifications.service.js
-│   │   │   ├── banners.service.js
-│   │   │   ├── faq.service.js
-│   │   │   ├── content.service.js
-│   │   │   ├── analytics.service.js
-│   │   │   ├── audit.service.js
-│   │   │   └── storage.service.js
-│   │   │
-│   │   ├── youtube/
-│   │   │   ├── youtube-live.service.js
-│   │   │   └── youtube-recordings.service.js
-│   │   │
-│   │   ├── email/
-│   │   │   ├── verification-email.service.js
-│   │   │   ├── password-reset-email.service.js
-│   │   │   ├── welcome-email.service.js
-│   │   │   └── reminders-email.service.js
-│   │   │
-│   │   └── security/
-│   │       ├── csrf.service.js
-│   │       ├── xss.service.js
-│   │       ├── rate-limit.service.js
-│   │       ├── headers.service.js
-│   │       ├── sanitization.service.js
-│   │       └── encryption.service.js
+│   ├── lib/
+│   │   ├── supabase.js          # Cliente singleton
+│   │   ├── auth.js              # Login + register + logout + Google + sesión
+│   │   ├── db.js                # Todas las queries a la base de datos
+│   │   └── router.js            # Routing + auth guard + admin guard
 │   │
 │   ├── modules/
-│   │   │
-│   │   ├── dashboard/
-│   │   │   ├── dashboard.js
-│   │   │   ├── banners.js
-│   │   │   ├── reminders.js
-│   │   │   ├── notifications.js
-│   │   │   ├── progress.js
-│   │   │   └── intervention-logic.js
-│   │   │
-│   │   ├── sessions/
-│   │   │   ├── sessions.js
-│   │   │   ├── unlock-sessions.js
-│   │   │   ├── live-player.js
-│   │   │   ├── recordings.js
-│   │   │   ├── sessions-access.js
-│   │   │   └── sessions-progress.js
-│   │   │
-│   │   ├── questionnaires/
-│   │   │   ├── pre-questionnaire.js
-│   │   │   ├── post-questionnaire.js
-│   │   │   ├── questionnaire-lock.js
-│   │   │   ├── questionnaire-status.js
-│   │   │   ├── questionnaire-validation.js
-│   │   │   └── incomplete-questionnaire.js
-│   │   │
-│   │   ├── admin/
-│   │   │   ├── users.js
-│   │   │   ├── sessions.js
-│   │   │   ├── recordings.js
-│   │   │   ├── banners.js
-│   │   │   ├── questionnaires.js
-│   │   │   ├── interventions.js
-│   │   │   ├── analytics.js
-│   │   │   ├── logs.js
-│   │   │   └── content.js
-│   │   │
-│   │   └── landing/
-│   │       ├── animations.js
-│   │       ├── counters.js
-│   │       ├── scroll-effects.js
-│   │       ├── team-slider.js
-│   │       └── faq-preview.js
+│   │   ├── dashboard.js         # Lógica del dashboard: avisos, progreso
+│   │   ├── sessions.js          # Listado, desbloqueo, reproductor
+│   │   ├── resources.js         # Grabaciones + descargables
+│   │   ├── profile.js           # Editar perfil + cambiar contraseña
+│   │   └── admin.js             # Toda la lógica del panel admin
 │   │
-│   ├── utils/
-│   │   │
-│   │   ├── validators.js
-│   │   ├── email-validator.js
-│   │   ├── password-validator.js
-│   │   ├── password-generator.js
-│   │   ├── password-policy.js
-│   │   ├── date-utils.js
-│   │   ├── formatters.js
-│   │   ├── local-storage.js
-│   │   ├── session-storage.js
-│   │   ├── debounce.js
-│   │   ├── throttle.js
-│   │   ├── redirects.js
-│   │   ├── role-checker.js
-│   │   ├── logger.js
-│   │   ├── constants.js
-│   │   ├── environment.js
-│   │   ├── accessibility.js
-│   │   └── helpers.js
-│   │
-│   └── seo/
-│       ├── meta-tags.js
-│       ├── structured-data.js
-│       ├── sitemap-generator.js
-│       └── robots-generator.js
+│   └── utils/
+│       ├── validators.js        # Email + contraseña + formularios
+│       ├── helpers.js           # Fechas + formateo + debounce
+│       ├── constants.js         # URLs, textos fijos, config
+│       └── seo.js               # Meta tags + structured data por página
 │
 ├── supabase/
-│   │
-│   ├── schema/
-│   │   ├── users.sql
-│   │   ├── roles.sql
-│   │   ├── interventions.sql
-│   │   ├── sessions.sql
-│   │   ├── recordings.sql
-│   │   ├── questionnaires.sql
-│   │   ├── questionnaire_attempts.sql
-│   │   ├── banners.sql
-│   │   ├── notifications.sql
-│   │   ├── faq.sql
-│   │   ├── contact_messages.sql
-│   │   ├── content.sql
-│   │   ├── audit_logs.sql
-│   │   └── settings.sql
-│   │
-│   ├── policies/
-│   │   ├── users_policies.sql
-│   │   ├── admin_policies.sql
-│   │   ├── sessions_policies.sql
-│   │   ├── recordings_policies.sql
-│   │   ├── questionnaires_policies.sql
-│   │   ├── faq_policies.sql
-│   │   ├── content_policies.sql
-│   │   ├── notifications_policies.sql
-│   │   ├── audit_logs_policies.sql
-│   │   └── storage_policies.sql
-│   │
-│   ├── functions/
-│   │   ├── assign_intervention.sql
-│   │   ├── unlock_next_session.sql
-│   │   ├── validate_questionnaire.sql
-│   │   ├── prevent_duplicate_questionnaire.sql
-│   │   ├── create_user_profile.sql
-│   │   ├── update_user_progress.sql
-│   │   ├── generate_notifications.sql
-│   │   ├── update_banner.sql
-│   │   ├── admin_stats.sql
-│   │   └── audit_log_trigger.sql
-│   │
-│   ├── triggers/
-│   │   ├── on_auth_user_created.sql
-│   │   ├── questionnaire_completed.sql
-│   │   ├── session_unlocked.sql
-│   │   ├── admin_changes.sql
-│   │   └── notification_trigger.sql
-│   │
-│   ├── seed/
-│   │   ├── sessions_seed.sql
-│   │   ├── faq_seed.sql
-│   │   ├── banners_seed.sql
-│   │   ├── settings_seed.sql
-│   │   └── admin_seed.sql
-│   │
-│   └── storage/
-│       ├── recordings_bucket.sql
-│       ├── avatars_bucket.sql
-│       └── documents_bucket.sql
-│
-├── security/
-│   │
-│   ├── headers/
-│   │   ├── csp.conf
-│   │   ├── security-headers.conf
-│   │   └── permissions-policy.conf
-│   │
-│   ├── auth/
-│   │   ├── password-policy.md
-│   │   ├── auth-flow.md
-│   │   └── session-security.md
-│   │
-│   └── compliance/
-│       ├── rgpd.md
-│       ├── cookies.md
-│       ├── accessibility.md
-│       └── legal.md
-│
-├── tests/
-│   │
-│   ├── auth/
-│   ├── dashboard/
-│   ├── admin/
-│   ├── questionnaires/
-│   ├── sessions/
-│   └── security/
+│   └── schema.sql               # Todo el SQL en un único archivo
 │
 ├── .env
 ├── .env.example
 ├── .gitignore
 ├── package.json
-├── package-lock.json
 ├── vite.config.js
-├── vercel.json
-├── README.md
-└── LICENSE
+├── vercel.json                  # Headers de seguridad + rewrites
+└── README.md
