@@ -1,861 +1,343 @@
--- ════════════════════════════════════════════════════════════
---  ALPHA-HELP · SQL FINAL UNIFICADO
---  Ejecutar completo en: Supabase Dashboard → SQL Editor
--- ════════════════════════════════════════════════════════════
+-- ════════════════════════════════════════════════════════
+--  ALPHA-HELP · Esquema mínimo y seguro
+--  Supabase SQL Editor → ejecutar completo de una vez
+-- ════════════════════════════════════════════════════════
 
--- ── Extensions ───────────────────────────────────────────────
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
--- ── Enums ────────────────────────────────────────────────────
+-- ── 1. TIPOS ─────────────────────────────────────────────
 DO $$ BEGIN
-  CREATE TYPE q_type     AS ENUM ('PRE','POST');
-  CREATE TYPE q_status   AS ENUM ('started','completed');
-  CREATE TYPE notif_type AS ENUM ('session','questionnaire','system','live');
+  CREATE TYPE intervention_region AS ENUM ('ES', 'LATAM');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- ════════════════════════════════════════════════════════════
---  SCHEMA — TABLAS
--- ════════════════════════════════════════════════════════════
+-- ════════════════════════════════════════════════════════
+--  TABLAS
+-- ════════════════════════════════════════════════════════
 
--- roles
-CREATE TABLE IF NOT EXISTS public.roles (
-  id          TEXT PRIMARY KEY,
-  name        TEXT NOT NULL,
-  description TEXT NOT NULL DEFAULT ''
+-- ── 2. PROFILES ──────────────────────────────────────────
+-- Una fila por usuario, vinculada a auth.users
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id           UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email        TEXT NOT NULL,
+  full_name    TEXT NOT NULL DEFAULT '',
+  is_admin     BOOLEAN NOT NULL DEFAULT FALSE,
+  region       intervention_region NOT NULL DEFAULT 'ES',
+  enrolled_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- interventions
-CREATE TABLE IF NOT EXISTS public.interventions (
-  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name        TEXT UNIQUE NOT NULL,
-  code        TEXT UNIQUE NOT NULL,
-  description TEXT NOT NULL DEFAULT '',
-  created_at  TIMESTAMPTZ DEFAULT NOW()
-);
-
--- users (linked to auth.users)
-CREATE TABLE IF NOT EXISTS public.users (
-  id              UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  email           TEXT UNIQUE NOT NULL,
-  full_name       TEXT NOT NULL DEFAULT '',
-  role_id         TEXT NOT NULL DEFAULT 'participant' REFERENCES public.roles(id),
-  intervention_id UUID REFERENCES public.interventions(id),
-  email_verified  BOOLEAN NOT NULL DEFAULT FALSE,
-  enrolled_at     TIMESTAMPTZ DEFAULT NOW(),
-  created_at      TIMESTAMPTZ DEFAULT NOW(),
-  updated_at      TIMESTAMPTZ DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_users_role         ON public.users(role_id);
-CREATE INDEX IF NOT EXISTS idx_users_intervention ON public.users(intervention_id);
-
--- sessions
+-- ── 3. SESSIONS ──────────────────────────────────────────
+-- Sesiones del programa (máx. 9, una por mes)
 CREATE TABLE IF NOT EXISTS public.sessions (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  intervention_id UUID NOT NULL REFERENCES public.interventions(id),
-  title           TEXT NOT NULL,
-  description     TEXT NOT NULL DEFAULT '',
-  month_number    INT NOT NULL,
-  youtube_live_url TEXT,
-  live_at         TIMESTAMPTZ,
-  recording_url   TEXT,
-  is_published    BOOLEAN NOT NULL DEFAULT FALSE,
-  created_at      TIMESTAMPTZ DEFAULT NOW(),
-  updated_at      TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(intervention_id, month_number)
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  region           intervention_region NOT NULL,
+  month_number     SMALLINT NOT NULL CHECK (month_number BETWEEN 1 AND 12),
+  title            TEXT NOT NULL,
+  description      TEXT NOT NULL DEFAULT '',
+  youtube_url      TEXT,                   -- URL del directo o grabación YT
+  live_at          TIMESTAMPTZ,            -- NULL = sin fecha programada
+  recording_url    TEXT,                   -- Disponible tras el directo
+  is_published     BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(region, month_number)
 );
-CREATE INDEX IF NOT EXISTS idx_sessions_intervention ON public.sessions(intervention_id, is_published);
-CREATE INDEX IF NOT EXISTS idx_sessions_live         ON public.sessions(live_at) WHERE live_at IS NOT NULL;
 
--- recordings
-CREATE TABLE IF NOT EXISTS public.recordings (
-  id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+-- ── 4. SESSION_RESOURCES ─────────────────────────────────
+-- PDFs, guías, enlaces adjuntos a una sesión
+CREATE TABLE IF NOT EXISTS public.session_resources (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   session_id   UUID NOT NULL REFERENCES public.sessions(id) ON DELETE CASCADE,
+  title        TEXT NOT NULL,
+  description  TEXT NOT NULL DEFAULT '',
+  type         TEXT NOT NULL DEFAULT 'pdf',   -- pdf | link | video
   url          TEXT NOT NULL,
-  is_available BOOLEAN NOT NULL DEFAULT FALSE,
-  created_at   TIMESTAMPTZ DEFAULT NOW()
+  sort_order   SMALLINT NOT NULL DEFAULT 0,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- session_access
-CREATE TABLE IF NOT EXISTS public.session_access (
-  id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id      UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  session_id   UUID NOT NULL REFERENCES public.sessions(id) ON DELETE CASCADE,
-  is_unlocked  BOOLEAN NOT NULL DEFAULT FALSE,
-  unlocked_at  TIMESTAMPTZ,
-  UNIQUE(user_id, session_id)
-);
-CREATE INDEX IF NOT EXISTS idx_session_access_user ON public.session_access(user_id, is_unlocked);
-
--- user_sessions (registro de visionado)
-CREATE TABLE IF NOT EXISTS public.user_sessions (
-  id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id      UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  session_id   UUID NOT NULL REFERENCES public.sessions(id) ON DELETE CASCADE,
-  is_completed BOOLEAN NOT NULL DEFAULT FALSE,
-  watched_at   TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(user_id, session_id)
-);
-
--- user_progress
+-- ── 5. USER_PROGRESS ─────────────────────────────────────
+-- Qué sesiones ha visto / completado cada usuario
 CREATE TABLE IF NOT EXISTS public.user_progress (
-  user_id                  UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  completed_sessions_count INT NOT NULL DEFAULT 0,
-  last_activity_at         TIMESTAMPTZ DEFAULT NOW()
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id      UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  session_id   UUID NOT NULL REFERENCES public.sessions(id) ON DELETE CASCADE,
+  watched      BOOLEAN NOT NULL DEFAULT FALSE,
+  completed    BOOLEAN NOT NULL DEFAULT FALSE,
+  completed_at TIMESTAMPTZ,
+  UNIQUE(user_id, session_id)
 );
 
--- questionnaires
-CREATE TABLE IF NOT EXISTS public.questionnaires (
-  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  type        q_type NOT NULL,
-  title       TEXT NOT NULL,
-  description TEXT NOT NULL DEFAULT '',
-  questions   JSONB NOT NULL DEFAULT '[]',
-  is_active   BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at  TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(type)
+-- ── 6. ANNOUNCEMENTS ─────────────────────────────────────
+-- Banners y avisos del dashboard, editables desde admin
+CREATE TABLE IF NOT EXISTS public.announcements (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title        TEXT NOT NULL,
+  message      TEXT NOT NULL,
+  type         TEXT NOT NULL DEFAULT 'info',  -- info | warning | success
+  region       intervention_region,            -- NULL = visible para todos
+  is_active    BOOLEAN NOT NULL DEFAULT TRUE,
+  starts_at    TIMESTAMPTZ,
+  ends_at      TIMESTAMPTZ,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- questionnaire_attempts
-CREATE TABLE IF NOT EXISTS public.questionnaire_attempts (
-  id                 UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id            UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  questionnaire_id   UUID NOT NULL REFERENCES public.questionnaires(id),
-  questionnaire_type q_type NOT NULL,
-  status             q_status NOT NULL DEFAULT 'started',
-  answers            JSONB NOT NULL DEFAULT '{}',
-  started_at         TIMESTAMPTZ DEFAULT NOW(),
-  completed_at       TIMESTAMPTZ,
-  UNIQUE(user_id, questionnaire_type)
-);
-CREATE INDEX IF NOT EXISTS idx_attempts_user ON public.questionnaire_attempts(user_id, questionnaire_type);
+-- ════════════════════════════════════════════════════════
+--  ÍNDICES
+-- ════════════════════════════════════════════════════════
 
--- notifications
-CREATE TABLE IF NOT EXISTS public.notifications (
-  id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id    UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  type       notif_type NOT NULL DEFAULT 'system',
-  title      TEXT NOT NULL,
-  message    TEXT NOT NULL,
-  is_read    BOOLEAN NOT NULL DEFAULT FALSE,
-  link       TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_notif_user ON public.notifications(user_id, is_read, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_sessions_region     ON public.sessions(region, is_published);
+CREATE INDEX IF NOT EXISTS idx_sessions_live       ON public.sessions(live_at) WHERE live_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_resources_session   ON public.session_resources(session_id);
+CREATE INDEX IF NOT EXISTS idx_progress_user       ON public.user_progress(user_id);
+CREATE INDEX IF NOT EXISTS idx_announcements_active ON public.announcements(is_active, region);
 
--- faq
-CREATE TABLE IF NOT EXISTS public.faq (
-  id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  question     TEXT NOT NULL,
-  answer       TEXT NOT NULL,
-  sort_order   INT NOT NULL DEFAULT 0,
-  is_published BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at   TIMESTAMPTZ DEFAULT NOW()
-);
+-- ════════════════════════════════════════════════════════
+--  FUNCIONES AUXILIARES
+-- ════════════════════════════════════════════════════════
 
--- content (CMS dinámico)
-CREATE TABLE IF NOT EXISTS public.content (
-  key        TEXT PRIMARY KEY,
-  value      TEXT NOT NULL DEFAULT '',
-  type       TEXT NOT NULL DEFAULT 'text',
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_by UUID REFERENCES auth.users(id)
-);
-
--- banners
-CREATE TABLE IF NOT EXISTS public.banners (
-  id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  title      TEXT NOT NULL,
-  content    TEXT NOT NULL DEFAULT '',
-  is_active  BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- contact_messages
-CREATE TABLE IF NOT EXISTS public.contact_messages (
-  id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id    UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  name       TEXT NOT NULL,
-  email      TEXT NOT NULL,
-  subject    TEXT NOT NULL,
-  message    TEXT NOT NULL,
-  is_read    BOOLEAN NOT NULL DEFAULT FALSE,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_contact_unread ON public.contact_messages(is_read, created_at DESC);
-
--- audit_logs
-CREATE TABLE IF NOT EXISTS public.audit_logs (
-  id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id    UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  action     TEXT NOT NULL,
-  details    TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_audit_user ON public.audit_logs(user_id, created_at DESC);
-
--- settings
-CREATE TABLE IF NOT EXISTS public.settings (
-  key        TEXT PRIMARY KEY,
-  value      TEXT NOT NULL,
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- password_resets
-CREATE TABLE IF NOT EXISTS public.password_resets (
-  id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id    UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  token      TEXT NOT NULL,
-  expires_at TIMESTAMPTZ NOT NULL,
-  used       BOOLEAN NOT NULL DEFAULT FALSE,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- email_verifications
-CREATE TABLE IF NOT EXISTS public.email_verifications (
-  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  token       TEXT NOT NULL,
-  expires_at  TIMESTAMPTZ NOT NULL,
-  verified_at TIMESTAMPTZ,
-  created_at  TIMESTAMPTZ DEFAULT NOW()
-);
-
--- admin_actions
-CREATE TABLE IF NOT EXISTS public.admin_actions (
-  id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  admin_id   UUID NOT NULL REFERENCES auth.users(id) ON DELETE SET NULL,
-  action     TEXT NOT NULL,
-  target_id  UUID,
-  details    JSONB NOT NULL DEFAULT '{}',
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- ════════════════════════════════════════════════════════════
---  FUNCTIONS
--- ════════════════════════════════════════════════════════════
-
--- helper: updated_at
+-- Actualiza updated_at automáticamente
 CREATE OR REPLACE FUNCTION public.set_updated_at()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
-BEGIN NEW.updated_at = NOW(); RETURN NEW; END;
-$$;
-
--- helper: is_admin (SECURITY DEFINER evita recursión en RLS)
-CREATE OR REPLACE FUNCTION public.is_admin()
-RETURNS BOOLEAN LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public AS $$
-  SELECT EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role_id = 'admin');
-$$;
-
--- create user profile on auth signup
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE v_region TEXT; v_int_id UUID;
 BEGIN
-  v_region := COALESCE(NEW.raw_user_meta_data->>'country', 'ES');
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$;
 
-  SELECT id INTO v_int_id FROM public.interventions
-  WHERE code = v_region LIMIT 1;
+-- Comprueba si el usuario actual es admin (evita recursión RLS)
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN
+LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path = public AS $$
+  SELECT COALESCE(
+    (SELECT is_admin FROM public.profiles WHERE id = auth.uid()),
+    FALSE
+  );
+$$;
 
-  -- fallback a España si no existe el código
-  IF v_int_id IS NULL THEN
-    SELECT id INTO v_int_id FROM public.interventions WHERE code = 'ES' LIMIT 1;
-  END IF;
+-- Crea perfil automáticamente al registrarse
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public AS $$
+DECLARE
+  v_region intervention_region;
+BEGIN
+  -- España si el país es ES, LATAM para cualquier otro
+  v_region := CASE
+    WHEN NEW.raw_user_meta_data->>'country' = 'ES' THEN 'ES'::intervention_region
+    ELSE 'LATAM'::intervention_region
+  END;
 
-  INSERT INTO public.users(id, email, full_name, role_id, intervention_id, email_verified)
+  INSERT INTO public.profiles (id, email, full_name, region)
   VALUES (
-    NEW.id, NEW.email,
+    NEW.id,
+    NEW.email,
     COALESCE(NEW.raw_user_meta_data->>'full_name', ''),
-    'participant', v_int_id,
-    (NEW.email_confirmed_at IS NOT NULL)
+    v_region
   )
   ON CONFLICT (id) DO NOTHING;
 
-  INSERT INTO public.user_progress(user_id, completed_sessions_count)
-  VALUES (NEW.id, 0)
-  ON CONFLICT (user_id) DO NOTHING;
-
-  -- desbloquear sesión mes 1 automáticamente
-  IF v_int_id IS NOT NULL THEN
-    INSERT INTO public.session_access(user_id, session_id, is_unlocked, unlocked_at)
-    SELECT NEW.id, id, TRUE, NOW()
-    FROM public.sessions
-    WHERE intervention_id = v_int_id AND month_number = 1 AND is_published = TRUE
-    ON CONFLICT (user_id, session_id) DO NOTHING;
-  END IF;
-
   RETURN NEW;
 END;
 $$;
 
--- verify email
-CREATE OR REPLACE FUNCTION public.verify_user_email(p_user_id UUID)
-RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  UPDATE public.users SET email_verified = TRUE WHERE id = p_user_id;
-END;
-$$;
-
--- trigger: mark email verified when auth confirms it
-CREATE OR REPLACE FUNCTION public.on_email_confirmed()
-RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF NEW.email_confirmed_at IS NOT NULL AND OLD.email_confirmed_at IS NULL THEN
-    PERFORM public.verify_user_email(NEW.id);
-    INSERT INTO public.notifications(user_id, type, title, message)
-    VALUES (NEW.id, 'system', '¡Bienvenido/a a Alpha-Help!',
-      'Tu cuenta está activada. Accede a tu primera sesión cuando quieras.');
-  END IF;
-  RETURN NEW;
-END;
-$$;
-
--- assign intervention manually
-CREATE OR REPLACE FUNCTION public.assign_intervention(p_user_id UUID, p_region TEXT)
-RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE v_int_id UUID;
-BEGIN
-  SELECT id INTO v_int_id FROM public.interventions WHERE name = p_region;
-  IF v_int_id IS NULL THEN
-    RAISE EXCEPTION 'Intervención para la región % no encontrada.', p_region;
-  END IF;
-
-  UPDATE public.users SET intervention_id = v_int_id WHERE id = p_user_id;
-
-  INSERT INTO public.session_access(user_id, session_id, is_unlocked, unlocked_at)
-  SELECT p_user_id, id, TRUE, NOW()
-  FROM public.sessions
-  WHERE intervention_id = v_int_id AND month_number = 1 AND is_published = TRUE
-  ON CONFLICT (user_id, session_id) DO NOTHING;
-END;
-$$;
-
--- unlock next session
-CREATE OR REPLACE FUNCTION public.unlock_next_session(p_user_id UUID)
-RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE
-  v_int_id    UUID;
-  v_count     INT;
-  v_next_id   UUID;
-BEGIN
-  SELECT intervention_id INTO v_int_id FROM public.users WHERE id = p_user_id;
-  SELECT completed_sessions_count INTO v_count FROM public.user_progress WHERE user_id = p_user_id;
-
-  SELECT id INTO v_next_id FROM public.sessions
-  WHERE intervention_id = v_int_id AND month_number = v_count + 1 AND is_published = TRUE;
-
-  IF v_next_id IS NOT NULL THEN
-    INSERT INTO public.session_access(user_id, session_id, is_unlocked, unlocked_at)
-    VALUES (p_user_id, v_next_id, TRUE, NOW())
-    ON CONFLICT (user_id, session_id)
-    DO UPDATE SET is_unlocked = TRUE, unlocked_at = NOW();
-
-    INSERT INTO public.notifications(user_id, type, title, message, link)
-    VALUES (p_user_id, 'session', 'Nueva sesión disponible',
-      'Tienes una nueva sesión desbloqueada en tu programa.', '/sesiones');
-
-    RETURN TRUE;
-  END IF;
-  RETURN FALSE;
-END;
-$$;
-
--- create session access record
-CREATE OR REPLACE FUNCTION public.create_session_access(p_user_id UUID, p_session_id UUID, p_unlocked BOOLEAN)
-RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  INSERT INTO public.session_access(user_id, session_id, is_unlocked, unlocked_at)
-  VALUES (p_user_id, p_session_id, p_unlocked, CASE WHEN p_unlocked THEN NOW() ELSE NULL END)
-  ON CONFLICT (user_id, session_id) DO NOTHING;
-END;
-$$;
-
--- get available sessions for a user
-CREATE OR REPLACE FUNCTION public.get_available_sessions(p_user_id UUID)
+-- Devuelve las sesiones disponibles para el usuario según fecha
+-- Una sesión se desbloquea si live_at <= NOW() o si ya fue publicada
+CREATE OR REPLACE FUNCTION public.get_my_sessions()
 RETURNS TABLE (
-  session_id   UUID,
-  title        TEXT,
-  month_number INT,
-  is_unlocked  BOOLEAN
-) LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  RETURN QUERY
-  SELECT s.id, s.title, s.month_number,
-    COALESCE(sa.is_unlocked, FALSE)
+  id              UUID,
+  month_number    SMALLINT,
+  title           TEXT,
+  description     TEXT,
+  youtube_url     TEXT,
+  live_at         TIMESTAMPTZ,
+  recording_url   TEXT,
+  is_live_now     BOOLEAN,
+  status          TEXT   -- 'upcoming' | 'available' | 'completed'
+)
+LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path = public AS $$
+  SELECT
+    s.id,
+    s.month_number,
+    s.title,
+    s.description,
+    s.youtube_url,
+    s.live_at,
+    s.recording_url,
+    -- En directo si live_at está en los últimos 90 min o próximas 24h
+    (s.live_at IS NOT NULL AND s.live_at BETWEEN NOW() - INTERVAL '90 minutes' AND NOW() + INTERVAL '24 hours') AS is_live_now,
+    CASE
+      WHEN up.completed = TRUE THEN 'completed'
+      WHEN s.live_at IS NULL OR s.live_at > NOW() + INTERVAL '24 hours' THEN 'upcoming'
+      ELSE 'available'
+    END AS status
   FROM public.sessions s
-  LEFT JOIN public.session_access sa
-    ON s.id = sa.session_id AND sa.user_id = p_user_id
-  WHERE s.intervention_id = (
-    SELECT intervention_id FROM public.users WHERE id = p_user_id
-  )
-  AND s.is_published = TRUE
+  LEFT JOIN public.user_progress up
+    ON up.session_id = s.id AND up.user_id = auth.uid()
+  WHERE s.region = (SELECT region FROM public.profiles WHERE id = auth.uid())
+    AND s.is_published = TRUE
   ORDER BY s.month_number;
-END;
 $$;
 
--- update user progress after session completion
-CREATE OR REPLACE FUNCTION public.update_user_progress(p_user_id UUID)
-RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE v_count INT;
-BEGIN
-  SELECT COUNT(*) INTO v_count
-  FROM public.user_sessions
-  WHERE user_id = p_user_id AND is_completed = TRUE;
-
-  UPDATE public.user_progress
-  SET completed_sessions_count = v_count, last_activity_at = NOW()
-  WHERE user_id = p_user_id;
-END;
-$$;
-
--- trigger wrapper for update_user_progress
-CREATE OR REPLACE FUNCTION public.trigger_update_user_progress()
-RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF NEW.is_completed = TRUE THEN
-    PERFORM public.update_user_progress(NEW.user_id);
-    PERFORM public.unlock_next_session(NEW.user_id);
-  END IF;
-  RETURN NEW;
-END;
-$$;
-
--- generate notification
-CREATE OR REPLACE FUNCTION public.generate_notifications(p_user_id UUID, p_title TEXT, p_message TEXT)
-RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  INSERT INTO public.notifications(user_id, title, message, is_read)
-  VALUES (p_user_id, p_title, p_message, FALSE);
-END;
-$$;
-
--- prevent duplicate completed questionnaire
-CREATE OR REPLACE FUNCTION public.check_duplicate_questionnaire_attempt()
-RETURNS TRIGGER LANGUAGE plpgsql AS $$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM public.questionnaire_attempts
-    WHERE user_id = NEW.user_id
-      AND questionnaire_type = NEW.questionnaire_type
-      AND status = 'completed'
-  ) THEN
-    RAISE EXCEPTION 'Este cuestionario ya ha sido completado y no puede reenviarse.';
-  END IF;
-  RETURN NEW;
-END;
-$$;
-
--- sync user role
-CREATE OR REPLACE FUNCTION public.sync_user_role(p_user_id UUID, p_role_id TEXT)
-RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  UPDATE public.users SET role_id = p_role_id WHERE id = p_user_id;
-END;
-$$;
-
--- update banner
-CREATE OR REPLACE FUNCTION public.update_banner(p_banner_id UUID, p_title TEXT, p_content TEXT, p_is_active BOOLEAN)
-RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  UPDATE public.banners
-  SET title = p_title, content = p_content, is_active = p_is_active
-  WHERE id = p_banner_id;
-END;
-$$;
-
--- validate password policy (frontend duplica esta validación)
-CREATE OR REPLACE FUNCTION public.validate_password_policy(p_password TEXT)
-RETURNS BOOLEAN LANGUAGE plpgsql IMMUTABLE AS $$
-BEGIN
-  RETURN length(p_password) >= 12
-    AND p_password ~ '[A-Z]'
-    AND p_password ~ '[a-z]'
-    AND p_password ~ '[0-9]'
-    AND p_password ~ '[!@#$%^&*(),.?":{}|<>]';
-END;
-$$;
-
--- validate questionnaire answers structure
-CREATE OR REPLACE FUNCTION public.validate_questionnaire(p_questions JSONB, p_answers JSONB)
-RETURNS BOOLEAN LANGUAGE plpgsql IMMUTABLE AS $$
-BEGIN
-  RETURN jsonb_typeof(p_answers) = 'object';
-END;
-$$;
-
--- audit log trigger function
-CREATE OR REPLACE FUNCTION public.log_audit_action()
-RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  INSERT INTO public.audit_logs(user_id, action, details)
-  VALUES (
-    auth.uid(),
-    TG_OP || ' ON ' || TG_TABLE_NAME,
-    'Row ID: ' || COALESCE(NEW.id::TEXT, OLD.id::TEXT)
-  );
-  RETURN COALESCE(NEW, OLD);
-END;
-$$;
-
--- admin stats
-CREATE OR REPLACE FUNCTION public.admin_stats()
-RETURNS TABLE (
-  total_users        BIGINT,
-  total_participants BIGINT,
-  completed_pre      BIGINT,
-  completed_post     BIGINT,
-  spain_users        BIGINT,
-  latam_users        BIGINT,
-  unread_contacts    BIGINT
-) LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  RETURN QUERY SELECT
-    (SELECT COUNT(*)  FROM public.users),
-    (SELECT COUNT(*)  FROM public.users WHERE role_id = 'participant'),
-    (SELECT COUNT(*)  FROM public.questionnaire_attempts WHERE questionnaire_type = 'PRE'  AND status = 'completed'),
-    (SELECT COUNT(*)  FROM public.questionnaire_attempts WHERE questionnaire_type = 'POST' AND status = 'completed'),
-    (SELECT COUNT(*)  FROM public.users u JOIN public.interventions i ON u.intervention_id = i.id WHERE i.code = 'ES'),
-    (SELECT COUNT(*)  FROM public.users u JOIN public.interventions i ON u.intervention_id = i.id WHERE i.code = 'LATAM'),
-    (SELECT COUNT(*)  FROM public.contact_messages WHERE is_read = FALSE);
-END;
-$$;
-
--- ════════════════════════════════════════════════════════════
+-- ════════════════════════════════════════════════════════
 --  TRIGGERS
--- ════════════════════════════════════════════════════════════
+-- ════════════════════════════════════════════════════════
 
--- updated_at automático
-CREATE TRIGGER set_users_updated_at
-  BEFORE UPDATE ON public.users
+-- Auto updated_at
+CREATE TRIGGER trg_profiles_updated_at
+  BEFORE UPDATE ON public.profiles
   FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
-CREATE TRIGGER set_sessions_updated_at
+CREATE TRIGGER trg_sessions_updated_at
   BEFORE UPDATE ON public.sessions
   FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
--- nuevo usuario → crear perfil + progreso + desbloquear sesión 1
+-- Crear perfil al registrarse
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- email verificado → activar cuenta + notificación
-CREATE TRIGGER user_verified
-  AFTER UPDATE OF email_confirmed_at ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.on_email_confirmed();
-
--- sesión completada → actualizar progreso + desbloquear siguiente
-CREATE TRIGGER session_completed_trigger
-  AFTER INSERT OR UPDATE OF is_completed ON public.user_sessions
-  FOR EACH ROW EXECUTE FUNCTION public.trigger_update_user_progress();
-
--- prevenir cuestionario duplicado
-CREATE TRIGGER prevent_duplicate_questionnaire
-  BEFORE INSERT ON public.questionnaire_attempts
-  FOR EACH ROW EXECUTE FUNCTION public.check_duplicate_questionnaire_attempt();
-
--- auditoría en tablas clave
-CREATE TRIGGER audit_users
-  AFTER INSERT OR UPDATE OR DELETE ON public.users
-  FOR EACH ROW EXECUTE FUNCTION public.log_audit_action();
-
-CREATE TRIGGER audit_questionnaire_attempts
-  AFTER INSERT OR UPDATE OR DELETE ON public.questionnaire_attempts
-  FOR EACH ROW EXECUTE FUNCTION public.log_audit_action();
-
-CREATE TRIGGER audit_session_access
-  AFTER INSERT OR UPDATE OR DELETE ON public.session_access
-  FOR EACH ROW EXECUTE FUNCTION public.log_audit_action();
-
-CREATE TRIGGER audit_admin_actions
-  AFTER INSERT ON public.admin_actions
-  FOR EACH ROW EXECUTE FUNCTION public.log_audit_action();
-
--- ════════════════════════════════════════════════════════════
+-- ════════════════════════════════════════════════════════
 --  ROW LEVEL SECURITY
--- ════════════════════════════════════════════════════════════
+-- ════════════════════════════════════════════════════════
 
-ALTER TABLE public.users                  ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.sessions               ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.session_access         ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.user_sessions          ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.user_progress          ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.questionnaires         ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.questionnaire_attempts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.notifications          ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.recordings             ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.faq                    ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.content                ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.banners                ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.resources              ENABLE ROW LEVEL SECURITY (IF EXISTS);
-ALTER TABLE public.contact_messages       ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.audit_logs             ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.settings               ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.admin_actions          ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.interventions          ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.roles                  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.profiles          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sessions          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.session_resources ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_progress     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.announcements     ENABLE ROW LEVEL SECURITY;
 
--- ── users ─────────────────────────────────────────────────────
-CREATE POLICY "users_own_select"
-  ON public.users FOR SELECT
+-- ── profiles ─────────────────────────────────────────────
+CREATE POLICY "profiles_own_read"
+  ON public.profiles FOR SELECT
   USING (id = auth.uid() OR public.is_admin());
 
-CREATE POLICY "users_own_update"
-  ON public.users FOR UPDATE
+CREATE POLICY "profiles_own_update"
+  ON public.profiles FOR UPDATE
   USING (id = auth.uid())
-  WITH CHECK (id = auth.uid() AND role_id = 'participant');
+  WITH CHECK (
+    id = auth.uid()
+    AND is_admin = (SELECT is_admin FROM public.profiles WHERE id = auth.uid())
+  );
 
-CREATE POLICY "users_admin_all"
-  ON public.users FOR ALL
+-- Solo admin puede ver y modificar todos los perfiles
+CREATE POLICY "profiles_admin"
+  ON public.profiles FOR ALL
   USING (public.is_admin());
 
--- ── sessions ──────────────────────────────────────────────────
-CREATE POLICY "sessions_user_select"
+-- ── sessions ─────────────────────────────────────────────
+-- Usuario solo ve sesiones de su región
+CREATE POLICY "sessions_user_read"
   ON public.sessions FOR SELECT
   USING (
     is_published = TRUE
-    AND intervention_id = (SELECT intervention_id FROM public.users WHERE id = auth.uid())
+    AND region = (SELECT region FROM public.profiles WHERE id = auth.uid())
   );
 
-CREATE POLICY "sessions_admin_all"
+CREATE POLICY "sessions_admin"
   ON public.sessions FOR ALL
   USING (public.is_admin());
 
--- ── session_access ────────────────────────────────────────────
-CREATE POLICY "session_access_own_select"
-  ON public.session_access FOR SELECT
-  USING (user_id = auth.uid() OR public.is_admin());
+-- ── session_resources ─────────────────────────────────────
+-- Usuario ve recursos de sesiones de su región
+CREATE POLICY "resources_user_read"
+  ON public.session_resources FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.sessions s
+      WHERE s.id = session_id
+        AND s.is_published = TRUE
+        AND s.region = (SELECT region FROM public.profiles WHERE id = auth.uid())
+    )
+  );
 
-CREATE POLICY "session_access_admin_all"
-  ON public.session_access FOR ALL
+CREATE POLICY "resources_admin"
+  ON public.session_resources FOR ALL
   USING (public.is_admin());
 
--- ── user_sessions ─────────────────────────────────────────────
-CREATE POLICY "user_sessions_own_select"
-  ON public.user_sessions FOR SELECT
-  USING (user_id = auth.uid() OR public.is_admin());
-
-CREATE POLICY "user_sessions_own_insert"
-  ON public.user_sessions FOR INSERT
-  WITH CHECK (user_id = auth.uid());
-
-CREATE POLICY "user_sessions_own_update"
-  ON public.user_sessions FOR UPDATE
-  USING (user_id = auth.uid())
-  WITH CHECK (user_id = auth.uid());
-
-CREATE POLICY "user_sessions_admin_all"
-  ON public.user_sessions FOR ALL
-  USING (public.is_admin());
-
--- ── user_progress ─────────────────────────────────────────────
-CREATE POLICY "progress_own_select"
+-- ── user_progress ─────────────────────────────────────────
+CREATE POLICY "progress_own_read"
   ON public.user_progress FOR SELECT
   USING (user_id = auth.uid() OR public.is_admin());
 
-CREATE POLICY "progress_admin_all"
-  ON public.user_progress FOR ALL
-  USING (public.is_admin());
-
--- ── questionnaires ────────────────────────────────────────────
-CREATE POLICY "questionnaires_active_select"
-  ON public.questionnaires FOR SELECT
-  USING (is_active = TRUE OR public.is_admin());
-
-CREATE POLICY "questionnaires_admin_all"
-  ON public.questionnaires FOR ALL
-  USING (public.is_admin());
-
--- ── questionnaire_attempts ────────────────────────────────────
-CREATE POLICY "attempts_own_select"
-  ON public.questionnaire_attempts FOR SELECT
-  USING (user_id = auth.uid() OR public.is_admin());
-
-CREATE POLICY "attempts_own_insert"
-  ON public.questionnaire_attempts FOR INSERT
+CREATE POLICY "progress_own_write"
+  ON public.user_progress FOR INSERT
   WITH CHECK (user_id = auth.uid());
 
-CREATE POLICY "attempts_own_update"
-  ON public.questionnaire_attempts FOR UPDATE
-  USING (user_id = auth.uid() AND status = 'started')
-  WITH CHECK (user_id = auth.uid());
-
-CREATE POLICY "attempts_admin_all"
-  ON public.questionnaire_attempts FOR ALL
-  USING (public.is_admin());
-
--- ── notifications ─────────────────────────────────────────────
-CREATE POLICY "notif_own_select"
-  ON public.notifications FOR SELECT
-  USING (user_id = auth.uid() OR user_id IS NULL OR public.is_admin());
-
-CREATE POLICY "notif_own_update"
-  ON public.notifications FOR UPDATE
+CREATE POLICY "progress_own_update"
+  ON public.user_progress FOR UPDATE
   USING (user_id = auth.uid())
   WITH CHECK (user_id = auth.uid());
 
-CREATE POLICY "notif_admin_all"
-  ON public.notifications FOR ALL
+CREATE POLICY "progress_admin"
+  ON public.user_progress FOR ALL
   USING (public.is_admin());
 
--- ── recordings ────────────────────────────────────────────────
-CREATE POLICY "recordings_auth_select"
-  ON public.recordings FOR SELECT
-  USING (is_available = TRUE AND auth.uid() IS NOT NULL OR public.is_admin());
+-- ── announcements ─────────────────────────────────────────
+CREATE POLICY "announcements_user_read"
+  ON public.announcements FOR SELECT
+  USING (
+    is_active = TRUE
+    AND (starts_at IS NULL OR starts_at <= NOW())
+    AND (ends_at   IS NULL OR ends_at   >= NOW())
+    AND (
+      region IS NULL
+      OR region = (SELECT region FROM public.profiles WHERE id = auth.uid())
+    )
+  );
 
-CREATE POLICY "recordings_admin_all"
-  ON public.recordings FOR ALL
+CREATE POLICY "announcements_admin"
+  ON public.announcements FOR ALL
   USING (public.is_admin());
 
--- ── faq, content, banners (lectura pública autenticada) ───────
-CREATE POLICY "faq_public_select"
-  ON public.faq FOR SELECT
-  USING (is_published = TRUE OR public.is_admin());
+-- ════════════════════════════════════════════════════════
+--  STORAGE
+-- ════════════════════════════════════════════════════════
 
-CREATE POLICY "faq_admin_all"
-  ON public.faq FOR ALL
-  USING (public.is_admin());
-
-CREATE POLICY "content_public_select"
-  ON public.content FOR SELECT
-  USING (TRUE);
-
-CREATE POLICY "content_admin_all"
-  ON public.content FOR ALL
-  USING (public.is_admin());
-
-CREATE POLICY "banners_auth_select"
-  ON public.banners FOR SELECT
-  USING (is_active = TRUE AND auth.uid() IS NOT NULL OR public.is_admin());
-
-CREATE POLICY "banners_admin_all"
-  ON public.banners FOR ALL
-  USING (public.is_admin());
-
--- ── contact_messages ──────────────────────────────────────────
-CREATE POLICY "contact_own_insert"
-  ON public.contact_messages FOR INSERT
-  WITH CHECK (auth.uid() IS NOT NULL);
-
-CREATE POLICY "contact_own_select"
-  ON public.contact_messages FOR SELECT
-  USING (user_id = auth.uid() OR public.is_admin());
-
-CREATE POLICY "contact_admin_all"
-  ON public.contact_messages FOR ALL
-  USING (public.is_admin());
-
--- ── audit_logs / admin_actions / settings ─────────────────────
-CREATE POLICY "audit_admin_only"
-  ON public.audit_logs FOR ALL
-  USING (public.is_admin());
-
-CREATE POLICY "admin_actions_admin_only"
-  ON public.admin_actions FOR ALL
-  USING (public.is_admin());
-
-CREATE POLICY "settings_admin_only"
-  ON public.settings FOR ALL
-  USING (public.is_admin());
-
--- ── interventions / roles (lectura pública) ───────────────────
-CREATE POLICY "interventions_public_select"
-  ON public.interventions FOR SELECT
-  USING (TRUE);
-
-CREATE POLICY "interventions_admin_all"
-  ON public.interventions FOR ALL
-  USING (public.is_admin());
-
-CREATE POLICY "roles_public_select"
-  ON public.roles FOR SELECT
-  USING (TRUE);
-
-CREATE POLICY "roles_admin_all"
-  ON public.roles FOR ALL
-  USING (public.is_admin());
-
--- ════════════════════════════════════════════════════════════
---  STORAGE BUCKETS
--- ════════════════════════════════════════════════════════════
-
-INSERT INTO storage.buckets(id, name, public) VALUES
-  ('recordings',  'recordings',  FALSE),
-  ('avatars',     'avatars',     TRUE),
-  ('documents',   'documents',   FALSE),
-  ('legal-files', 'legal-files', TRUE)
+INSERT INTO storage.buckets (id, name, public) VALUES
+  ('resources', 'resources', FALSE),   -- PDFs y documentos privados
+  ('avatars',   'avatars',   TRUE)     -- Fotos de perfil (públicas)
 ON CONFLICT (id) DO NOTHING;
 
-CREATE POLICY "recordings_auth_select"
+-- Solo usuarios autenticados pueden descargar recursos
+CREATE POLICY "resources_auth_download"
   ON storage.objects FOR SELECT
-  USING (bucket_id = 'recordings' AND auth.uid() IS NOT NULL);
+  USING (bucket_id = 'resources' AND auth.uid() IS NOT NULL);
 
-CREATE POLICY "documents_auth_select"
-  ON storage.objects FOR SELECT
-  USING (bucket_id = 'documents' AND auth.uid() IS NOT NULL);
+-- Admin puede subir/borrar recursos
+CREATE POLICY "resources_admin_upload"
+  ON storage.objects FOR INSERT
+  WITH CHECK (bucket_id = 'resources' AND public.is_admin());
 
-CREATE POLICY "legal_public_select"
-  ON storage.objects FOR SELECT
-  USING (bucket_id = 'legal-files');
+CREATE POLICY "resources_admin_delete"
+  ON storage.objects FOR DELETE
+  USING (bucket_id = 'resources' AND public.is_admin());
 
-CREATE POLICY "avatars_public_select"
+-- Avatares: cualquier usuario autenticado puede subir el suyo
+CREATE POLICY "avatars_public_read"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'avatars');
 
-CREATE POLICY "avatars_own_insert"
+CREATE POLICY "avatars_own_upload"
   ON storage.objects FOR INSERT
   WITH CHECK (
     bucket_id = 'avatars'
     AND auth.uid()::TEXT = (storage.foldername(name))[1]
   );
 
-CREATE POLICY "storage_admin_all"
-  ON storage.objects FOR ALL
-  USING (public.is_admin());
+-- ════════════════════════════════════════════════════════
+--  DATOS INICIALES
+-- ════════════════════════════════════════════════════════
 
--- ════════════════════════════════════════════════════════════
---  SEED DATA
--- ════════════════════════════════════════════════════════════
-
--- roles
-INSERT INTO public.roles(id, name, description) VALUES
-  ('participant', 'Participante', 'Usuario participante del programa'),
-  ('admin',       'Administrador', 'Acceso total al panel de administración')
-ON CONFLICT (id) DO NOTHING;
-
--- interventions
-INSERT INTO public.interventions(name, code, description) VALUES
-  ('España',         'ES',    'Ruta de intervención para familias en España'),
-  ('Latinoamérica',  'LATAM', 'Ruta de intervención para familias en Latinoamérica')
-ON CONFLICT (name) DO NOTHING;
-
--- settings
-INSERT INTO public.settings(key, value) VALUES
-  ('platform_name',  'Alpha-Help'),
-  ('support_email',  'soporte@alpha-help.com'),
-  ('sessions_total', '9')
-ON CONFLICT (key) DO NOTHING;
-
--- content (editable desde el panel admin)
-INSERT INTO public.content(key, value, type) VALUES
-  ('hero_title',    'Cuida el bienestar digital de tu familia.', 'text'),
-  ('hero_subtitle', 'Un programa de acompañamiento para familias que quieren recuperar un uso saludable de la tecnología en casa.', 'text'),
-  ('legal_terms',   '', 'html'),
-  ('legal_privacy', '', 'html'),
-  ('legal_notice',  '', 'html'),
-  ('legal_cookies', '', 'html')
-ON CONFLICT (key) DO NOTHING;
-
--- faq inicial
-INSERT INTO public.faq(question, answer, sort_order) VALUES
-  ('¿Cómo funciona el programa?',
-   'El programa está formado por sesiones en directo y materiales de apoyo que se publican de forma progresiva. Cada sesión aborda una parte diferente del uso saludable de la tecnología en casa.',
-   1),
-  ('¿Cuándo se desbloquean las sesiones?',
-   'Las sesiones se publican siguiendo el calendario del programa. Recibirás una notificación cuando una nueva sesión esté lista.',
-   2),
-  ('¿Puedo ver las sesiones más de una vez?',
-   'Sí. Las grabaciones quedan disponibles en tu área de Sesiones y puedes verlas cuando quieras.',
-   3),
-  ('¿Qué hago si tengo un problema técnico?',
-   'Escríbenos desde el apartado de Contacto. El equipo te responderá en un máximo de 48 horas laborables.',
-   4)
+-- Anuncio de bienvenida de ejemplo (editable desde admin)
+INSERT INTO public.announcements (title, message, type, region, is_active) VALUES
+  (
+    'Bienvenido/a al programa Alpha-Help',
+    'Aquí encontrarás todas tus sesiones, materiales y recursos. Cualquier duda, escríbenos desde el apartado de Contacto.',
+    'info',
+    NULL,   -- visible para España y LATAM
+    TRUE
+  )
 ON CONFLICT DO NOTHING;

@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>Crear cuenta | ALPHA-HELP</title>
+
+  <meta
+    name="description"
+    content="Registro privado para acceder a la plataforma de bienestar digital y acompañamiento familiar."
+  />
+
+  <meta
+    name="robots"
+    content="noindex,nofollow"
+  />
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/src/styles/base.css" />
+  <link rel="stylesheet" href="/src/styles/components.css" />
+  <link rel="stylesheet" href="/src/styles/auth.css" />
+
+</head>
+
+<body>
+
+<main class="auth-layout">
+
+  <!-- HERO -->
+  <section class="auth-hero">
+
+    <div class="auth-hero-content">
+
+      <img
+        src="/src/assets/images/logo.png"
+        alt="ALPHA-HELP"
+        class="auth-hero-logo"
+      />
+
+      <span class="auth-badge">
+        Acceso seguro
+      </span>
+
+      <h1>
+        Formación digital para familias.
+      </h1>
+
+      <p>
+        Regístrate para acceder a sesiones, materiales y recursos exclusivos del programa.
+      </p>
+
+    </div>
+
+  </section>
+
+  <!-- PANEL -->
+  <section class="auth-panel">
+
+    <div class="auth-card card">
+
+      <div class="auth-card-header">
+
+        <h2>
+          Crear cuenta
+        </h2>
+
+        <p>
+          Completa tus datos para registrarte.
+        </p>
+
+      </div>
+
+      <form
+        id="register-form"
+        class="auth-form"
+        novalidate
+      >
+
+        <input
+          id="full_name"
+          class="input"
+          type="text"
+          placeholder="Nombre completo"
+          autocomplete="name"
+          maxlength="80"
+          required
+        />
+
+        <input
+          id="email"
+          class="input"
+          type="email"
+          placeholder="Correo electrónico"
+          autocomplete="email"
+          spellcheck="false"
+          required
+        />
+
+        <input
+          id="password"
+          class="input"
+          type="password"
+          placeholder="Contraseña"
+          autocomplete="new-password"
+          minlength="8"
+          required
+        />
+
+        <select
+          id="region"
+          class="input"
+          required
+        >
+
+          <option value="">
+            Selecciona tu región
+          </option>
+
+          <option value="ES">
+            España
+          </option>
+
+          <option value="LATAM">
+            Latinoamérica
+          </option>
+
+        </select>
+
+        <label class="checkbox-row">
+
+          <input
+            id="terms"
+            type="checkbox"
+            required
+          />
+
+          <span>
+            Acepto la política de privacidad y los términos legales.
+          </span>
+
+        </label>
+
+        <p
+          id="form-error"
+          class="form-error hidden"
+          aria-live="polite"
+        ></p>
+
+        <button
+          id="register-btn"
+          class="button"
+          type="submit"
+        >
+
+          <span class="button-text">
+            Crear cuenta
+          </span>
+
+          <span class="button-loader hidden">
+            <span class="spinner-small"></span>
+          </span>
+
+        </button>
+
+      </form>
+
+      <div class="auth-links">
+
+        <a href="/src/pages/public/login.html">
+          Ya tengo cuenta
+        </a>
+
+      </div>
+
+      <footer class="auth-footer">
+
+        <a href="/src/pages/public/privacy.html">
+          Privacidad
+        </a>
+
+        <a href="/src/pages/public/terms.html">
+          Términos
+        </a>
+
+        <a href="/src/pages/public/cookies.html">
+          Cookies
+        </a>
+
+      </footer>
+
+    </div>
+
+  </section>
+
+</main>
+
+<script type="module">
+
+  import {
+    signUp
+  } from '/src/lib/auth.js'
+
+  import {
+
+    sanitize,
+    sanitizeEmail,
+
+    getNameError,
+    getEmailError,
+    getPasswordError,
+
+    isValidRegion
+
+  } from '/src/utils/validators.js'
+
+  const form =
+    document.getElementById('register-form')
+
+  const errorEl =
+    document.getElementById('form-error')
+
+  const submitBtn =
+    document.getElementById('register-btn')
+
+  // INPUTS
+  const nameInput =
+    document.getElementById('full_name')
+
+  const emailInput =
+    document.getElementById('email')
+
+  const passwordInput =
+    document.getElementById('password')
+
+  const regionInput =
+    document.getElementById('region')
+
+  const termsInput =
+    document.getElementById('terms')
+
+  // ─────────────────────────────────
+  // HELPERS
+  // ─────────────────────────────────
+
+  function setButtonLoading(state) {
+
+    submitBtn.classList.toggle(
+      'loading',
+      state
+    )
+
+    submitBtn.disabled = state
+
+    submitBtn
+      .querySelector('.button-text')
+      .classList.toggle('hidden', state)
+
+    submitBtn
+      .querySelector('.button-loader')
+      .classList.toggle('hidden', !state)
+
+  }
+
+  function showError(message) {
+
+    errorEl.textContent = message
+
+    errorEl.classList.remove('hidden')
+  }
+
+  function clearError() {
+
+    errorEl.textContent = ''
+
+    errorEl.classList.add('hidden')
+  }
+
+  function setInputError(input) {
+
+    input.classList.add('error')
+
+    input.classList.remove('success')
+  }
+
+  function setInputSuccess(input) {
+
+    input.classList.remove('error')
+
+    input.classList.add('success')
+  }
+
+  function resetInputState(input) {
+
+    input.classList.remove(
+      'error',
+      'success'
+    )
+  }
+
+  // ─────────────────────────────────
+  // LIVE VALIDATION
+  // ─────────────────────────────────
+
+  nameInput.addEventListener('input', () => {
+
+    resetInputState(nameInput)
+
+    const error =
+      getNameError(nameInput.value)
+
+    if (error) return
+
+    setInputSuccess(nameInput)
+
+  })
+
+  emailInput.addEventListener('input', () => {
+
+    resetInputState(emailInput)
+
+    const error =
+      getEmailError(emailInput.value)
+
+    if (error) return
+
+    setInputSuccess(emailInput)
+
+  })
+
+  passwordInput.addEventListener('input', () => {
+
+    resetInputState(passwordInput)
+
+    const error =
+      getPasswordError(passwordInput.value)
+
+    if (error) return
+
+    setInputSuccess(passwordInput)
+
+  })
+
+  regionInput.addEventListener('change', () => {
+
+    resetInputState(regionInput)
+
+    if (
+      !isValidRegion(regionInput.value)
+    ) return
+
+    setInputSuccess(regionInput)
+
+  })
+
+  // ─────────────────────────────────
+  // REGISTER
+  // ─────────────────────────────────
+
+  form.addEventListener('submit', async (e) => {
+
+    e.preventDefault()
+
+    clearError()
+
+    const full_name =
+      sanitize(nameInput.value)
+
+    const email =
+      sanitizeEmail(emailInput.value)
+
+    const password =
+      passwordInput.value.trim()
+
+    const region =
+      regionInput.value
+
+    // VALIDATION
+
+    const nameError =
+      getNameError(full_name)
+
+    const emailError =
+      getEmailError(email)
+
+    const passwordError =
+      getPasswordError(password)
+
+    if (nameError) {
+
+      setInputError(nameInput)
+
+      showError(nameError)
+
+      return
+    }
+
+    if (emailError) {
+
+      setInputError(emailInput)
+
+      showError(emailError)
+
+      return
+    }
+
+    if (passwordError) {
+
+      setInputError(passwordInput)
+
+      showError(passwordError)
+
+      return
+    }
+
+    if (!isValidRegion(region)) {
+
+      setInputError(regionInput)
+
+      showError(
+        'Selecciona una región válida.'
+      )
+
+      return
+    }
+
+    if (!termsInput.checked) {
+
+      showError(
+        'Debes aceptar los términos.'
+      )
+
+      return
+    }
+
+    // SUCCESS STATES
+
+    setInputSuccess(nameInput)
+
+    setInputSuccess(emailInput)
+
+    setInputSuccess(passwordInput)
+
+    setInputSuccess(regionInput)
+
+    setButtonLoading(true)
+
+    try {
+
+      await signUp({
+
+        full_name,
+        email,
+        password,
+        region
+
+      })
+
+      submitBtn.classList.add(
+        'success'
+      )
+
+      setTimeout(() => {
+
+        window.location.replace(
+          '/src/pages/public/login.html'
+        )
+
+      }, 700)
+
+    } catch (error) {
+
+      showError(error.message)
+
+      setButtonLoading(false)
+
+    }
+
+  })
+
+</script>
+
+</body>
+</html>

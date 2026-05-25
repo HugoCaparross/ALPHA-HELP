@@ -1,1 +1,56 @@
-/* Estilos exclusivos del panel administrador */
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 2rem;
+}
+
+.admin-table-wrapper {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+
+  border-collapse: collapse;
+
+  background: #fff;
+
+  border-radius: 14px;
+
+  overflow: hidden;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 1rem;
+
+  border-bottom: 1px solid var(--border);
+
+  text-align: left;
+}
+
+.admin-table th {
+  background: #f8fafc;
+
+  font-weight: 600;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.admin-actions button {
+  width: auto;
+}
+
+@media (max-width: 768px) {
+  .admin-header {
+    flex-direction: column;
+    align-items: flex-start;
+
+    gap: 1rem;
+  }
+}

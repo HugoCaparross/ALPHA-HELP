@@ -1,1 +1,223 @@
-/* Estilos para el panel de participante */
+/* ───────────────────────────────────── */
+/* DASHBOARD */
+/* ───────────────────────────────────── */
+
+.dashboard-grid {
+
+  display: grid;
+
+  gap: 1.5rem;
+}
+
+.dashboard-section-header {
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 1rem;
+}
+
+.dashboard-section-header h2 {
+
+  font-size: 1.25rem;
+
+  letter-spacing: -0.02em;
+}
+
+/* ───────────────────────────────────── */
+/* WELCOME */
+/* ───────────────────────────────────── */
+
+.dashboard-welcome-card {
+
+  padding: 2rem;
+}
+
+.dashboard-title {
+
+  font-size: 2.1rem;
+  font-weight: 700;
+
+  letter-spacing: -0.03em;
+
+  margin-bottom: 0.75rem;
+}
+
+.dashboard-subtitle {
+
+  max-width: 700px;
+
+  color: var(--text-light);
+
+  line-height: 1.7;
+}
+
+/* ───────────────────────────────────── */
+/* ANNOUNCEMENTS */
+/* ───────────────────────────────────── */
+
+.dashboard-cards {
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(auto-fit, minmax(280px, 1fr));
+
+  gap: 1.25rem;
+}
+
+.announcement-card {
+
+  padding: 1.5rem;
+}
+
+.announcement-top {
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 1rem;
+}
+
+.announcement-card h3 {
+
+  font-size: 1.1rem;
+
+  margin-bottom: 0.75rem;
+}
+
+.announcement-card p {
+
+  color: var(--text-light);
+
+  line-height: 1.7;
+}
+
+/* ───────────────────────────────────── */
+/* NEXT SESSION */
+/* ───────────────────────────────────── */
+
+.next-session-card {
+
+  padding: 2rem;
+}
+
+.next-session-header {
+
+  margin-bottom: 1rem;
+}
+
+.next-session-card h2 {
+
+  font-size: 0.95rem;
+
+  color: var(--primary);
+
+  margin-bottom: 0.5rem;
+}
+
+.next-session-card h3 {
+
+  font-size: 1.5rem;
+
+  letter-spacing: -0.03em;
+
+  margin-bottom: 1rem;
+}
+
+.next-session-card p {
+
+  color: var(--text-light);
+
+  line-height: 1.7;
+
+  margin-bottom: 1.5rem;
+}
+
+.next-session-date {
+
+  display: inline-flex;
+  align-items: center;
+
+  padding: 0.75rem 1rem;
+
+  border-radius: 12px;
+
+  background:
+    rgba(37,99,235,0.08);
+
+  color: var(--primary);
+
+  font-weight: 600;
+
+  font-size: 0.92rem;
+}
+
+/* ───────────────────────────────────── */
+/* STATS */
+/* ───────────────────────────────────── */
+
+.dashboard-stats-grid {
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(auto-fit, minmax(220px, 1fr));
+
+  gap: 1.25rem;
+}
+
+.stat-card {
+
+  padding: 1.5rem;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 0.5rem;
+}
+
+.stat-number {
+
+  font-size: 2.2rem;
+  font-weight: 700;
+
+  letter-spacing: -0.04em;
+}
+
+.stat-label {
+
+  color: var(--text-light);
+
+  font-size: 0.95rem;
+}
+
+/* ───────────────────────────────────── */
+/* SKELETON */
+/* ───────────────────────────────────── */
+
+.skeleton-card {
+
+  padding: 1.5rem;
+}
+
+/* ───────────────────────────────────── */
+/* RESPONSIVE */
+/* ───────────────────────────────────── */
+
+@media (max-width: 700px) {
+
+  .dashboard-title {
+
+    font-size: 1.7rem;
+  }
+
+  .next-session-card,
+  .dashboard-welcome-card {
+
+    padding: 1.5rem;
+  }
+
+}

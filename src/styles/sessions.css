@@ -1,1 +1,208 @@
-/* Estilos de sesiones e intervenciones */
+/* ───────────────────────────────────── */
+/* SESSIONS */
+/* ───────────────────────────────────── */
+
+.sessions-grid {
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(auto-fit, minmax(320px, 1fr));
+
+  gap: 1.5rem;
+}
+
+/* ───────────────────────────────────── */
+/* SESSION CARD */
+/* ───────────────────────────────────── */
+
+.session-card {
+
+  display: flex;
+  flex-direction: column;
+
+  padding: 1.5rem;
+
+  min-height: 100%;
+}
+
+.session-top {
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 1rem;
+
+  margin-bottom: 1.25rem;
+}
+
+.session-card h2 {
+
+  font-size: 1.35rem;
+
+  letter-spacing: -0.03em;
+
+  margin-bottom: 1rem;
+}
+
+.session-card p {
+
+  color: var(--text-light);
+
+  line-height: 1.7;
+
+  margin-bottom: 1.5rem;
+}
+
+/* ───────────────────────────────────── */
+/* ACTIONS */
+/* ───────────────────────────────────── */
+
+.session-actions {
+
+  display: flex;
+  align-items: center;
+
+  gap: 0.75rem;
+
+  margin-top: auto;
+}
+
+/* ───────────────────────────────────── */
+/* RESOURCES */
+/* ───────────────────────────────────── */
+
+.session-resources {
+
+  margin-top: 1.5rem;
+}
+
+.resources-loading {
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 1rem 0;
+}
+
+/* ───────────────────────────────────── */
+/* RESOURCE ITEM */
+/* ───────────────────────────────────── */
+
+.resource-item {
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 1rem;
+
+  padding: 1rem;
+
+  border:
+    1px solid var(--border);
+
+  border-radius: 14px;
+
+  background: #fff;
+
+  transition:
+    transform var(--transition),
+    border-color var(--transition),
+    box-shadow var(--transition);
+}
+
+.resource-item:hover {
+
+  transform: translateY(-1px);
+
+  border-color:
+    rgba(37,99,235,0.2);
+
+  box-shadow:
+    0 12px 24px rgba(15,23,42,0.06);
+}
+
+.resource-type {
+
+  display: inline-flex;
+  align-items: center;
+
+  padding:
+    0.3rem 0.65rem;
+
+  border-radius: 999px;
+
+  background:
+    rgba(37,99,235,0.08);
+
+  color: var(--primary);
+
+  font-size: 0.78rem;
+  font-weight: 700;
+
+  text-transform: uppercase;
+}
+
+/* ───────────────────────────────────── */
+/* EMPTY */
+/* ───────────────────────────────────── */
+
+.empty-resources {
+
+  padding: 1rem;
+
+  border-radius: 12px;
+
+  background:
+    rgba(148,163,184,0.08);
+
+  color: var(--text-light);
+
+  font-size: 0.92rem;
+
+  text-align: center;
+}
+
+/* ───────────────────────────────────── */
+/* RESPONSIVE */
+/* ───────────────────────────────────── */
+
+@media (max-width: 700px) {
+
+  .sessions-grid {
+
+    grid-template-columns: 1fr;
+  }
+
+  .session-card {
+
+    padding: 1.25rem;
+  }
+
+  .session-top {
+
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .session-actions {
+
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .session-actions .button {
+
+    width: 100%;
+  }
+
+  .resource-item {
+
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+}

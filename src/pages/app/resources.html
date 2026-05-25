@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>Recursos | ALPHA-HELP</title>
+
+  <link rel="stylesheet" href="/src/styles/base.css" />
+  <link rel="stylesheet" href="/src/styles/components.css" />
+  <link rel="stylesheet" href="/src/styles/sessions.css" />
+
+</head>
+
+<body>
+
+<div class="dashboard-grid">
+
+  <div id="sidebar"></div>
+
+  <main class="dashboard-content">
+
+    <header class="dashboard-header">
+
+      <h1 class="dashboard-title">
+        Recursos y grabaciones
+      </h1>
+
+      <p class="dashboard-subtitle">
+        Accede a materiales, enlaces y grabaciones.
+      </p>
+
+    </header>
+
+    <section
+      id="resources-grid"
+      class="sessions-grid"
+    ></section>
+
+  </main>
+
+</div>
+
+<script type="module">
+
+  import { initGuard } from '/src/lib/router.js'
+  import { createSidebar } from '/src/components/layout.js'
+  import { getMySessions } from '/src/lib/db.js'
+
+  await initGuard()
+
+  document.getElementById('sidebar').innerHTML =
+    createSidebar('resources')
+
+  const sessions = await getMySessions()
+
+  const available = sessions.filter(
+    item => item.recording_url
+  )
+
+  document.getElementById('resources-grid').innerHTML =
+    available.map(item => `
+      <article class="card session-card">
+
+        <div class="session-top">
+          <span class="badge success">
+            Disponible
+          </span>
+        </div>
+
+        <h2>${item.title}</h2>
+
+        <p>
+          Grabación disponible para visualizar.
+        </p>
+
+        <a
+          class="button"
+          href="${item.recording_url}"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Ver grabación
+        </a>
+
+      </article>
+    `).join('')
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>FAQ | ALPHA-HELP</title>
+
+  <link rel="stylesheet" href="/src/styles/base.css" />
+  <link rel="stylesheet" href="/src/styles/components.css" />
+  <link rel="stylesheet" href="/src/styles/dashboard.css" />
+
+</head>
+
+<body>
+
+<div class="dashboard-grid">
+
+  <div id="sidebar"></div>
+
+  <main class="dashboard-content">
+
+    <header class="dashboard-header">
+
+      <h1 class="dashboard-title">
+        Preguntas frecuentes
+      </h1>
+
+      <p class="dashboard-subtitle">
+        Información importante sobre la plataforma.
+      </p>
+
+    </header>
+
+    <section class="faq-list">
+
+      <article class="card announcement-card">
+        <h2>¿Cómo accedo a las sesiones?</h2>
+
+        <p>
+          Desde el apartado “Sesiones” dentro de tu panel privado.
+        </p>
+      </article>
+
+      <article class="card announcement-card">
+        <h2>¿Qué ocurre si pierdo una sesión?</h2>
+
+        <p>
+          Las grabaciones estarán disponibles posteriormente.
+        </p>
+      </article>
+
+      <article class="card announcement-card">
+        <h2>¿Cómo contacto con soporte?</h2>
+
+        <p>
+          Desde la página de contacto dentro de la plataforma.
+        </p>
+      </article>
+
+    </section>
+
+  </main>
+
+</div>
+
+<script type="module">
+
+  import { initGuard } from '/src/lib/router.js'
+  import { createSidebar } from '/src/components/layout.js'
+
+  await initGuard()
+
+  document.getElementById('sidebar').innerHTML =
+    createSidebar('faq')
+
+</script>
+
+</body>
+</html>

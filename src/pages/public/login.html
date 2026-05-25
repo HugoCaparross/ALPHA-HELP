@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>Iniciar sesión | ALPHA-HELP</title>
+
+  <meta
+    name="description"
+    content="Plataforma privada de bienestar digital y acompañamiento familiar."
+  />
+
+  <meta
+    name="robots"
+    content="noindex,nofollow"
+  />
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/src/styles/base.css" />
+  <link rel="stylesheet" href="/src/styles/components.css" />
+  <link rel="stylesheet" href="/src/styles/auth.css" />
+
+</head>
+
+<body>
+
+<main class="auth-layout">
+
+  <!-- HERO -->
+  <section class="auth-hero">
+
+    <div class="auth-hero-content">
+
+      <img
+        src="/src/assets/images/logo.png"
+        alt="ALPHA-HELP"
+        class="auth-hero-logo"
+      />
+
+      <span class="auth-badge">
+        Plataforma privada segura
+      </span>
+
+      <h1>
+        Bienestar digital y acompañamiento familiar.
+      </h1>
+
+      <p>
+        Accede de forma segura a sesiones, materiales y recursos exclusivos del programa.
+      </p>
+
+    </div>
+
+  </section>
+
+  <!-- PANEL -->
+  <section class="auth-panel">
+
+    <div class="auth-card card">
+
+      <div class="auth-card-header">
+
+        <h2>
+          Iniciar sesión
+        </h2>
+
+        <p>
+          Introduce tus credenciales para acceder.
+        </p>
+
+      </div>
+
+      <form
+        id="login-form"
+        class="auth-form"
+        novalidate
+      >
+
+        <input
+          id="email"
+          class="input"
+          type="email"
+          placeholder="Correo electrónico"
+          autocomplete="email"
+          spellcheck="false"
+          required
+        />
+
+        <input
+          id="password"
+          class="input"
+          type="password"
+          placeholder="Contraseña"
+          autocomplete="current-password"
+          required
+        />
+
+        <p
+          id="form-error"
+          class="form-error hidden"
+          aria-live="polite"
+        ></p>
+
+        <button
+          id="login-btn"
+          class="button"
+          type="submit"
+        >
+
+          <span class="button-text">
+            Acceder
+          </span>
+
+          <span class="button-loader hidden">
+            <span class="spinner-small"></span>
+          </span>
+
+        </button>
+
+      </form>
+
+      <button
+        id="google-login"
+        class="button button-secondary"
+        type="button"
+      >
+        Continuar con Google
+      </button>
+
+      <div class="auth-links">
+
+        <a href="/src/pages/public/register.html">
+          Crear cuenta
+        </a>
+
+        <a href="/src/pages/public/forgot-password.html">
+          Recuperar contraseña
+        </a>
+
+      </div>
+
+      <footer class="auth-footer">
+
+        <a href="/src/pages/public/privacy.html">
+          Privacidad
+        </a>
+
+        <a href="/src/pages/public/terms.html">
+          Términos
+        </a>
+
+        <a href="/src/pages/public/cookies.html">
+          Cookies
+        </a>
+
+      </footer>
+
+    </div>
+
+  </section>
+
+</main>
+
+<script type="module">
+
+  import {
+    signIn,
+    signInWithGoogle
+  } from '/src/lib/auth.js'
+
+  import {
+    sanitizeEmail,
+    getEmailError,
+    getPasswordError
+  } from '/src/utils/validators.js'
+
+  const form =
+    document.getElementById('login-form')
+
+  const errorEl =
+    document.getElementById('form-error')
+
+  const submitBtn =
+    document.getElementById('login-btn')
+
+  const googleBtn =
+    document.getElementById('google-login')
+
+  const emailInput =
+    document.getElementById('email')
+
+  const passwordInput =
+    document.getElementById('password')
+
+  // ─────────────────────────────────
+  // HELPERS
+  // ─────────────────────────────────
+
+  function setButtonLoading(state) {
+
+    submitBtn.classList.toggle(
+      'loading',
+      state
+    )
+
+    submitBtn.disabled = state
+
+    googleBtn.disabled = state
+
+    submitBtn
+      .querySelector('.button-text')
+      .classList.toggle('hidden', state)
+
+    submitBtn
+      .querySelector('.button-loader')
+      .classList.toggle('hidden', !state)
+  }
+
+  function showError(message) {
+
+    errorEl.textContent = message
+
+    errorEl.classList.remove('hidden')
+  }
+
+  function clearError() {
+
+    errorEl.textContent = ''
+
+    errorEl.classList.add('hidden')
+  }
+
+  function setInputError(input) {
+
+    input.classList.add('error')
+
+    input.classList.remove('success')
+  }
+
+  function setInputSuccess(input) {
+
+    input.classList.remove('error')
+
+    input.classList.add('success')
+  }
+
+  function resetInputState(input) {
+
+    input.classList.remove(
+      'error',
+      'success'
+    )
+  }
+
+  // ─────────────────────────────────
+  // LIVE VALIDATION
+  // ─────────────────────────────────
+
+  emailInput.addEventListener('input', () => {
+
+    resetInputState(emailInput)
+
+    const error =
+      getEmailError(emailInput.value)
+
+    if (error) return
+
+    setInputSuccess(emailInput)
+  })
+
+  passwordInput.addEventListener('input', () => {
+
+    resetInputState(passwordInput)
+
+    const error =
+      getPasswordError(passwordInput.value)
+
+    if (error) return
+
+    setInputSuccess(passwordInput)
+  })
+
+  // ─────────────────────────────────
+  // LOGIN
+  // ─────────────────────────────────
+
+  form.addEventListener('submit', async (e) => {
+
+    e.preventDefault()
+
+    clearError()
+
+    const email =
+      sanitizeEmail(emailInput.value)
+
+    const password =
+      passwordInput.value.trim()
+
+    const emailError =
+      getEmailError(email)
+
+    const passwordError =
+      getPasswordError(password)
+
+    if (emailError) {
+
+      setInputError(emailInput)
+
+      showError(emailError)
+
+      return
+    }
+
+    if (passwordError) {
+
+      setInputError(passwordInput)
+
+      showError(passwordError)
+
+      return
+    }
+
+    setInputSuccess(emailInput)
+
+    setInputSuccess(passwordInput)
+
+    setButtonLoading(true)
+
+    try {
+
+      await signIn(
+        email,
+        password
+      )
+
+      submitBtn.classList.add(
+        'success'
+      )
+
+      setTimeout(() => {
+
+        window.location.replace(
+          '/src/pages/app/dashboard.html'
+        )
+
+      }, 500)
+
+    } catch (error) {
+
+      showError(error.message)
+
+      setButtonLoading(false)
+
+    }
+
+  })
+
+  // ─────────────────────────────────
+  // GOOGLE LOGIN
+  // ─────────────────────────────────
+
+  googleBtn.addEventListener(
+    'click',
+    async () => {
+
+      clearError()
+
+      try {
+
+        googleBtn.disabled = true
+
+        await signInWithGoogle()
+
+      } catch (error) {
+
+        showError(error.message)
+
+        googleBtn.disabled = false
+
+      }
+
+    }
+  )
+
+</script>
+
+</body>
+</html>
