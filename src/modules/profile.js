@@ -1,520 +1,512 @@
+// src/modules/profile.js
+
 import {
-  getUser,
+  getMyProfile,
+  updateMyProfile
+} from '../lib/db.js';
+
+import {
   updatePassword,
-  signOut
-} from '../lib/auth.js'
+  logout
+} from '../lib/auth.js';
 
 import {
-  getProfile,
-  updateProfile,
-  uploadAvatar,
-  getAvatarUrl
-} from '../lib/db.js'
+  uploadAvatar
+} from '../lib/supabase.js';
 
 import {
+  initProfileForm,
+  initChangePasswordForm
+} from '../components/forms.js';
 
-  sanitize,
-  isValidName,
-  isValidRegion,
+import {
+  showLoader,
+  hideLoader,
+  showToast,
+  openConfirmModal
+} from '../components/ui.js';
+
+import {
   validateImageFile
+} from '../utils/validators.js';
 
-} from '../utils/validators.js'
 
-// ─────────────────────────────────────
-// MAIN
-// ─────────────────────────────────────
+// ======================================================
+// INIT PROFILE
+// ======================================================
 
-export async function loadProfile(
-  container
-) {
+export async function initProfile() {
 
   try {
 
-    renderLoading(container)
-
-    const user =
-      await getUser()
-
-    if (!user) {
-      return
-    }
+    showLoader(
+      'Cargando perfil...'
+    );
 
     const profile =
-      await getProfile(user.id)
+      await getMyProfile();
 
-    renderProfile(
-      container,
-      user,
-      profile
-    )
+    renderProfile(profile);
+
+    initProfileUpdate();
+
+    initPasswordChange();
+
+    initAvatarUpload(profile);
+
+    initLogoutButton();
 
   } catch (error) {
 
-    console.error(
-      '[PROFILE_ERROR]',
-      error
-    )
+    console.error(error);
 
-    renderError(container)
+    showToast(
+      'error',
+      'No se pudo cargar el perfil'
+    );
 
+  } finally {
+
+    hideLoader();
   }
-
 }
 
-// ─────────────────────────────────────
-// RENDER
-// ─────────────────────────────────────
 
-function renderProfile(
-  container,
-  user,
-  profile
-) {
+// ======================================================
+// RENDER PROFILE
+// ======================================================
 
-  const avatar =
-    getAvatarUrl(
-      profile?.avatar_url
-    )
+function renderProfile(profile) {
+
+  renderProfileHeader(profile);
+
+  renderProfileForm(profile);
+}
+
+
+// ======================================================
+// PROFILE HEADER
+// ======================================================
+
+function renderProfileHeader(profile) {
+
+  const container =
+    document.getElementById(
+      'profile-header'
+    );
+
+  if (!container) return;
 
   container.innerHTML = `
+    <div class="profile-header-card">
 
-    <div class="card profile-card">
+      <div class="profile-avatar-wrapper">
 
-      <div class="profile-header">
+        ${
+          profile.avatar_url
 
-        <div class="profile-avatar-wrapper">
+            ? `
+              <img
+                src="${profile.avatar_url}"
+                alt="${profile.full_name}"
+                class="profile-avatar-image"
+              >
+            `
 
-          <img
-            src="${
-              avatar ||
-              '/src/assets/images/default-avatar.png'
-            }"
-            alt="Avatar"
-            class="profile-avatar"
-            id="profile-avatar"
-          />
+            : `
+              <div class="profile-avatar-placeholder">
+
+                ${getInitials(
+                  profile.full_name
+                )}
+
+              </div>
+            `
+        }
+
+        <label
+          for="avatar-input"
+          class="profile-avatar-edit"
+        >
+          ✏️
+        </label>
+
+        <input
+          type="file"
+          id="avatar-input"
+          accept="image/*"
+          hidden
+        >
+
+      </div>
+
+      <div class="profile-header-info">
+
+        <h1 class="profile-name">
+          ${profile.full_name}
+        </h1>
+
+        <p class="profile-email">
+          ${profile.email}
+        </p>
+
+        <span class="profile-region">
+          ${profile.region}
+        </span>
+
+      </div>
+
+    </div>
+  `;
+}
+
+
+// ======================================================
+// PROFILE FORM
+// ======================================================
+
+function renderProfileForm(profile) {
+
+  const container =
+    document.getElementById(
+      'profile-form-container'
+    );
+
+  if (!container) return;
+
+  const [
+    name = '',
+    surname = ''
+  ] = profile.full_name.split(' ');
+
+  container.innerHTML = `
+    <form
+      id="profile-form"
+      class="profile-form"
+    >
+
+      <div class="form-grid">
+
+        <div class="form-group">
+
+          <label>
+            Nombre
+          </label>
+
+          <input
+            type="text"
+            name="name"
+            value="${name}"
+            data-validate="name"
+          >
 
         </div>
 
-        <div>
+        <div class="form-group">
 
-          <h2>
-            ${profile?.full_name || ''}
-          </h2>
+          <label>
+            Apellidos
+          </label>
 
-          <p>
-            ${profile?.email || ''}
-          </p>
+          <input
+            type="text"
+            name="surname"
+            value="${surname}"
+            data-validate="name"
+          >
 
         </div>
 
       </div>
 
-      <form
-        id="profile-form"
-        class="auth-form"
-      >
+      <div class="form-group">
+
+        <label>
+          Email
+        </label>
 
         <input
-          id="full_name"
-          class="input"
-          type="text"
-          value="${profile?.full_name || ''}"
-          maxlength="80"
-          required
-        />
-
-        <select
-          id="region"
-          class="input"
-          required
+          type="email"
+          value="${profile.email}"
+          disabled
         >
 
-          <option
-            value="ES"
-            ${
-              profile?.region === 'ES'
-                ? 'selected'
-                : ''
-            }
-          >
-            España
-          </option>
-
-          <option
-            value="LATAM"
-            ${
-              profile?.region === 'LATAM'
-                ? 'selected'
-                : ''
-            }
-          >
-            Latinoamérica
-          </option>
-
-        </select>
-
-        <input
-          id="avatar"
-          type="file"
-          accept=".jpg,.jpeg,.png,.webp"
-        />
-
-        <button
-          class="button"
-          type="submit"
-        >
-          Guardar cambios
-        </button>
-
-      </form>
-
-      <div class="profile-divider"></div>
-
-      <form
-        id="password-form"
-        class="auth-form"
-      >
-
-        <input
-          id="new-password"
-          class="input"
-          type="password"
-          placeholder="Nueva contraseña"
-          minlength="8"
-          required
-        />
-
-        <button
-          class="button button-secondary"
-          type="submit"
-        >
-          Cambiar contraseña
-        </button>
-
-      </form>
-
-      <div class="profile-divider"></div>
+      </div>
 
       <button
-        id="logout-btn"
-        class="button button-secondary"
+        type="submit"
+        class="btn btn-primary"
       >
-        Cerrar sesión
+        Guardar cambios
       </button>
 
-      <p
-        id="profile-message"
-        class="form-success hidden"
-      ></p>
+    </form>
+  `;
 
-      <p
-        id="profile-error"
-        class="form-error hidden"
-      ></p>
-
-    </div>
-
-  `
-
-  initProfileEvents(
-    user,
-    profile
-  )
-
+  renderPasswordForm();
 }
 
-// ─────────────────────────────────────
-// EVENTS
-// ─────────────────────────────────────
 
-function initProfileEvents(
-  user,
-  profile
-) {
+// ======================================================
+// PASSWORD FORM
+// ======================================================
 
-  const profileForm =
+function renderPasswordForm() {
+
+  const container =
     document.getElementById(
-      'profile-form'
-    )
+      'change-password-container'
+    );
 
-  const passwordForm =
-    document.getElementById(
-      'password-form'
-    )
+  if (!container) return;
 
-  const logoutBtn =
-    document.getElementById(
-      'logout-btn'
-    )
+  container.innerHTML = `
+    <form
+      id="change-password-form"
+      class="profile-password-form"
+    >
 
-  const messageEl =
-    document.getElementById(
-      'profile-message'
-    )
+      <div class="form-group">
 
-  const errorEl =
-    document.getElementById(
-      'profile-error'
-    )
+        <label>
+          Nueva contraseña
+        </label>
 
-  function showError(message) {
+        <input
+          type="password"
+          name="password"
+          data-validate="password"
+        >
 
-    errorEl.textContent =
-      message
+      </div>
 
-    errorEl.classList.remove(
-      'hidden'
-    )
+      <button
+        type="submit"
+        class="btn btn-secondary"
+      >
+        Cambiar contraseña
+      </button>
 
-    messageEl.classList.add(
-      'hidden'
-    )
-  }
+    </form>
+  `;
+}
 
-  function showSuccess(message) {
 
-    messageEl.textContent =
-      message
+// ======================================================
+// PROFILE UPDATE
+// ======================================================
 
-    messageEl.classList.remove(
-      'hidden'
-    )
+function initProfileUpdate() {
 
-    errorEl.classList.add(
-      'hidden'
-    )
-  }
-
-  // ─────────────────────────────────
-  // PROFILE UPDATE
-  // ─────────────────────────────────
-
-  profileForm.addEventListener(
-    'submit',
-    async (e) => {
-
-      e.preventDefault()
+  initProfileForm(
+    async data => {
 
       try {
 
-        const full_name =
-          sanitize(
-            document
-              .getElementById(
-                'full_name'
-              )
-              .value
-          )
+        showLoader(
+          'Actualizando perfil...'
+        );
 
-        const region =
-          document
-            .getElementById(
-              'region'
-            )
-            .value
+        const fullName =
+          `${data.name} ${data.surname}`;
 
-        const avatarFile =
-          document
-            .getElementById(
-              'avatar'
-            )
-            .files[0]
+        await updateMyProfile({
 
-        if (
-          !isValidName(full_name)
-        ) {
-          throw new Error(
-            'Nombre inválido.'
-          )
-        }
+          full_name: fullName
+        });
 
-        if (
-          !isValidRegion(region)
-        ) {
-          throw new Error(
-            'Región inválida.'
-          )
-        }
-
-        let avatar_url =
-          profile?.avatar_url || null
-
-        if (avatarFile) {
-
-          if (
-            !validateImageFile(
-              avatarFile
-            )
-          ) {
-
-            throw new Error(
-              'Imagen inválida.'
-            )
-          }
-
-          const uploaded =
-            await uploadAvatar(
-              user.id,
-              avatarFile
-            )
-
-          avatar_url =
-            uploaded?.path || null
-        }
-
-        await updateProfile(
-          user.id,
-          {
-            full_name,
-            region,
-            avatar_url
-          }
-        )
-
-        showSuccess(
-          'Perfil actualizado correctamente.'
-        )
+        showToast(
+          'success',
+          'Perfil actualizado correctamente'
+        );
 
       } catch (error) {
 
-        console.error(
-          '[PROFILE_UPDATE_ERROR]',
-          error
-        )
+        console.error(error);
 
-        showError(
-          error.message
-        )
+        showToast(
+          'error',
+          'No se pudo actualizar el perfil'
+        );
 
+      } finally {
+
+        hideLoader();
       }
-
     }
-  )
+  );
+}
 
-  // ─────────────────────────────────
-  // PASSWORD
-  // ─────────────────────────────────
 
-  passwordForm.addEventListener(
-    'submit',
-    async (e) => {
+// ======================================================
+// PASSWORD CHANGE
+// ======================================================
 
-      e.preventDefault()
+function initPasswordChange() {
+
+  initChangePasswordForm(
+    async data => {
 
       try {
 
-        const password =
-          document
-            .getElementById(
-              'new-password'
-            )
-            .value
-            .trim()
-
-        if (
-          password.length < 8
-        ) {
-
-          throw new Error(
-            'La contraseña debe tener mínimo 8 caracteres.'
-          )
-
-        }
+        showLoader(
+          'Actualizando contraseña...'
+        );
 
         await updatePassword(
-          password
-        )
+          data.password
+        );
 
-        passwordForm.reset()
-
-        showSuccess(
-          'Contraseña actualizada correctamente.'
-        )
+        showToast(
+          'success',
+          'Contraseña actualizada'
+        );
 
       } catch (error) {
 
-        console.error(
-          '[PASSWORD_UPDATE_ERROR]',
-          error
-        )
+        console.error(error);
 
-        showError(
+        showToast(
+          'error',
           error.message
-        )
+        );
 
+      } finally {
+
+        hideLoader();
       }
-
     }
-  )
+  );
+}
 
-  // ─────────────────────────────────
-  // LOGOUT
-  // ─────────────────────────────────
 
-  logoutBtn.addEventListener(
-    'click',
-    async () => {
+// ======================================================
+// AVATAR
+// ======================================================
+
+function initAvatarUpload(profile) {
+
+  const input =
+    document.getElementById(
+      'avatar-input'
+    );
+
+  if (!input) return;
+
+  input.addEventListener(
+    'change',
+    async event => {
+
+      const file =
+        event.target.files[0];
+
+      if (!file) return;
+
+      // VALIDATE
+
+      const valid =
+        validateImageFile(file);
+
+      if (!valid) {
+
+        showToast(
+          'error',
+          'Imagen no válida'
+        );
+
+        return;
+      }
 
       try {
 
-        await signOut()
+        showLoader(
+          'Subiendo avatar...'
+        );
+
+        const avatarUrl =
+          await uploadAvatar(
+            file,
+            profile.id
+          );
+
+        await updateMyProfile({
+
+          avatar_url: avatarUrl
+        });
+
+        showToast(
+          'success',
+          'Avatar actualizado'
+        );
+
+        window.location.reload();
 
       } catch (error) {
 
-        showError(
-          'No se pudo cerrar sesión.'
-        )
+        console.error(error);
 
+        showToast(
+          'error',
+          'No se pudo subir el avatar'
+        );
+
+      } finally {
+
+        hideLoader();
       }
-
     }
-  )
-
+  );
 }
 
-// ─────────────────────────────────────
-// LOADING
-// ─────────────────────────────────────
 
-function renderLoading(container) {
+// ======================================================
+// LOGOUT
+// ======================================================
 
-  container.innerHTML = `
+function initLogoutButton() {
 
-    <div class="card profile-card">
+  const button =
+    document.getElementById(
+      'profile-logout-button'
+    );
 
-      <div class="skeleton skeleton-title"></div>
+  if (!button) return;
 
-      <div class="skeleton skeleton-text"></div>
+  button.addEventListener(
+    'click',
+    () => {
 
-      <div class="skeleton skeleton-text short"></div>
+      openConfirmModal({
 
-    </div>
+        title:
+          'Cerrar sesión',
 
-  `
+        message:
+          '¿Seguro que quieres cerrar sesión?',
 
+        confirmText:
+          'Cerrar sesión',
+
+        onConfirm: async () => {
+
+          await logout();
+        }
+      });
+    }
+  );
 }
 
-// ─────────────────────────────────────
-// ERROR
-// ─────────────────────────────────────
 
-function renderError(container) {
+// ======================================================
+// HELPERS
+// ======================================================
 
-  container.innerHTML = `
+function getInitials(name = '') {
 
-    <div class="card empty-state">
-
-      <h3>
-        Error al cargar el perfil
-      </h3>
-
-      <p>
-        Ha ocurrido un problema al cargar tus datos.
-      </p>
-
-    </div>
-
-  `
-
+  return name
+    .split(' ')
+    .map(word => word[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 }

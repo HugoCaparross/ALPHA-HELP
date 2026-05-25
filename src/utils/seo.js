@@ -1,178 +1,536 @@
-const SEO_CONFIG = {
+// src/utils/seo.js
 
-  dashboard: {
-    title: 'Dashboard | ALPHA-HELP',
+import {
+  APP_NAME,
+  SEO
+} from './constants.js';
+
+
+// ======================================================
+// DEFAULT SEO
+// ======================================================
+
+export function setDefaultSEO() {
+
+  updateTitle(
+    SEO.DEFAULT_TITLE
+  );
+
+  updateDescription(
+    SEO.DEFAULT_DESCRIPTION
+  );
+
+  updateKeywords(
+    SEO.KEYWORDS
+  );
+
+  updateOpenGraph({
+
+    title:
+      SEO.DEFAULT_TITLE,
+
     description:
-      'Panel privado de sesiones y recursos.'
-  },
+      SEO.DEFAULT_DESCRIPTION,
 
-  sessions: {
-    title: 'Sesiones | ALPHA-HELP',
-    description:
-      'Sesiones privadas y contenido exclusivo.'
-  },
-
-  profile: {
-    title: 'Perfil | ALPHA-HELP',
-    description:
-      'Gestión segura del perfil de usuario.'
-  },
-
-  login: {
-    title: 'Iniciar sesión | ALPHA-HELP',
-    description:
-      'Acceso seguro a la plataforma privada.'
-  },
-
-  register: {
-    title: 'Crear cuenta | ALPHA-HELP',
-    description:
-      'Registro seguro en la plataforma.'
-  }
-
+    image:
+      SEO.OG_IMAGE
+  });
 }
 
-// ─────────────────────────────────────
-// APPLY SEO
-// ─────────────────────────────────────
 
-export function applySEO() {
+// ======================================================
+// PAGE SEO
+// ======================================================
 
-  const path =
-    window.location.pathname
+export function setPageSEO({
+  title = APP_NAME,
+  description = SEO.DEFAULT_DESCRIPTION,
+  keywords = [],
+  image = SEO.OG_IMAGE,
+  noIndex = false,
+  structuredData = null
+} = {}) {
 
-  let page = null
+  updateTitle(title);
 
-  if (
-    path.includes('dashboard')
-  ) {
-    page = SEO_CONFIG.dashboard
+  updateDescription(description);
+
+  updateKeywords([
+    ...SEO.KEYWORDS,
+    ...keywords
+  ]);
+
+  updateOpenGraph({
+    title,
+    description,
+    image
+  });
+
+  updateRobots(noIndex);
+
+  if (structuredData) {
+    setStructuredData(
+      structuredData
+    );
   }
+}
 
-  else if (
-    path.includes('sessions')
-  ) {
-    page = SEO_CONFIG.sessions
-  }
 
-  else if (
-    path.includes('profile')
-  ) {
-    page = SEO_CONFIG.profile
-  }
+// ======================================================
+// TITLE
+// ======================================================
 
-  else if (
-    path.includes('login')
-  ) {
-    page = SEO_CONFIG.login
-  }
+export function updateTitle(title) {
 
-  else if (
-    path.includes('register')
-  ) {
-    page = SEO_CONFIG.register
-  }
-
-  if (!page) return
-
-  // TITLE
   document.title =
-    page.title
+    `${title} | ${APP_NAME}`;
+}
 
-  // DESCRIPTION
-  updateMeta(
+
+// ======================================================
+// DESCRIPTION
+// ======================================================
+
+export function updateDescription(
+  description
+) {
+
+  updateMetaTag(
     'description',
-    page.description
-  )
+    description
+  );
+}
 
-  // OG TITLE
-  updateProperty(
+
+// ======================================================
+// KEYWORDS
+// ======================================================
+
+export function updateKeywords(
+  keywords = []
+) {
+
+  const content =
+    keywords.join(', ');
+
+  updateMetaTag(
+    'keywords',
+    content
+  );
+}
+
+
+// ======================================================
+// OPEN GRAPH
+// ======================================================
+
+export function updateOpenGraph({
+  title,
+  description,
+  image
+}) {
+
+  updateMetaProperty(
     'og:title',
-    page.title
-  )
+    title
+  );
 
-  // OG DESCRIPTION
-  updateProperty(
+  updateMetaProperty(
     'og:description',
-    page.description
-  )
+    description
+  );
 
-  // OG TYPE
-  updateProperty(
+  updateMetaProperty(
+    'og:image',
+    image
+  );
+
+  updateMetaProperty(
     'og:type',
     'website'
-  )
+  );
 
-  // TWITTER
-  updateMeta(
-    'twitter:card',
-    'summary_large_image'
-  )
+  updateMetaProperty(
+    'og:site_name',
+    APP_NAME
+  );
 
+  updateMetaProperty(
+    'og:url',
+    window.location.href
+  );
 }
 
-// ─────────────────────────────────────
-// META HELPERS
-// ─────────────────────────────────────
 
-function updateMeta(
+// ======================================================
+// TWITTER
+// ======================================================
+
+export function updateTwitterCard({
+  title,
+  description,
+  image
+}) {
+
+  updateMetaName(
+    'twitter:card',
+    'summary_large_image'
+  );
+
+  updateMetaName(
+    'twitter:title',
+    title
+  );
+
+  updateMetaName(
+    'twitter:description',
+    description
+  );
+
+  updateMetaName(
+    'twitter:image',
+    image
+  );
+}
+
+
+// ======================================================
+// ROBOTS
+// ======================================================
+
+export function updateRobots(
+  noIndex = false
+) {
+
+  const content =
+    noIndex
+      ? 'noindex,nofollow'
+      : 'index,follow';
+
+  updateMetaName(
+    'robots',
+    content
+  );
+}
+
+
+// ======================================================
+// STRUCTURED DATA
+// ======================================================
+
+export function setStructuredData(
+  data
+) {
+
+  removeStructuredData();
+
+  const script =
+    document.createElement('script');
+
+  script.type =
+    'application/ld+json';
+
+  script.id =
+    'structured-data';
+
+  script.textContent =
+    JSON.stringify(data);
+
+  document.head.appendChild(script);
+}
+
+
+// ======================================================
+// REMOVE STRUCTURED DATA
+// ======================================================
+
+export function removeStructuredData() {
+
+  const existing =
+    document.getElementById(
+      'structured-data'
+    );
+
+  if (existing) {
+    existing.remove();
+  }
+}
+
+
+// ======================================================
+// META HELPERS
+// ======================================================
+
+function updateMetaTag(
   name,
   content
 ) {
 
-  let tag =
+  let meta =
     document.querySelector(
       `meta[name="${name}"]`
-    )
+    );
 
-  if (!tag) {
+  if (!meta) {
 
-    tag =
-      document.createElement('meta')
+    meta =
+      document.createElement('meta');
 
-    tag.setAttribute(
+    meta.setAttribute(
       'name',
       name
-    )
+    );
 
-    document.head.appendChild(tag)
-
+    document.head.appendChild(meta);
   }
 
-  tag.setAttribute(
+  meta.setAttribute(
     'content',
     content
-  )
-
+  );
 }
 
-function updateProperty(
+
+function updateMetaProperty(
   property,
   content
 ) {
 
-  let tag =
+  let meta =
     document.querySelector(
       `meta[property="${property}"]`
-    )
+    );
 
-  if (!tag) {
+  if (!meta) {
 
-    tag =
-      document.createElement('meta')
+    meta =
+      document.createElement('meta');
 
-    tag.setAttribute(
+    meta.setAttribute(
       'property',
       property
-    )
+    );
 
-    document.head.appendChild(tag)
-
+    document.head.appendChild(meta);
   }
 
-  tag.setAttribute(
+  meta.setAttribute(
     'content',
     content
-  )
+  );
+}
 
+
+function updateMetaName(
+  name,
+  content
+) {
+
+  let meta =
+    document.querySelector(
+      `meta[name="${name}"]`
+    );
+
+  if (!meta) {
+
+    meta =
+      document.createElement('meta');
+
+    meta.setAttribute(
+      'name',
+      name
+    );
+
+    document.head.appendChild(meta);
+  }
+
+  meta.setAttribute(
+    'content',
+    content
+  );
+}
+
+
+// ======================================================
+// PAGE TYPES
+// ======================================================
+
+export function applyLoginSEO() {
+
+  setPageSEO({
+
+    title:
+      'Login',
+
+    description:
+      `
+        Plataforma privada de intervención
+        familiar y bienestar digital.
+      `.trim(),
+
+    keywords: [
+
+      'intervención familiar',
+
+      'bienestar digital',
+
+      'educación digital'
+    ]
+  });
+}
+
+
+export function applyDashboardSEO() {
+
+  setPageSEO({
+
+    title:
+      'Dashboard',
+
+    noIndex: true
+  });
+}
+
+
+export function applySessionsSEO() {
+
+  setPageSEO({
+
+    title:
+      'Sesiones',
+
+    noIndex: true
+  });
+}
+
+
+export function applyResourcesSEO() {
+
+  setPageSEO({
+
+    title:
+      'Recursos',
+
+    noIndex: true
+  });
+}
+
+
+export function applyProfileSEO() {
+
+  setPageSEO({
+
+    title:
+      'Perfil',
+
+    noIndex: true
+  });
+}
+
+
+export function applyAdminSEO() {
+
+  setPageSEO({
+
+    title:
+      'Administración',
+
+    noIndex: true
+  });
+}
+
+
+// ======================================================
+// CANONICAL URL
+// ======================================================
+
+export function setCanonicalUrl(
+  url = window.location.href
+) {
+
+  let canonical =
+    document.querySelector(
+      'link[rel="canonical"]'
+    );
+
+  if (!canonical) {
+
+    canonical =
+      document.createElement('link');
+
+    canonical.setAttribute(
+      'rel',
+      'canonical'
+    );
+
+    document.head.appendChild(
+      canonical
+    );
+  }
+
+  canonical.setAttribute(
+    'href',
+    url
+  );
+}
+
+
+// ======================================================
+// FAVICON
+// ======================================================
+
+export function setFavicon(
+  href
+) {
+
+  let favicon =
+    document.querySelector(
+      'link[rel="icon"]'
+    );
+
+  if (!favicon) {
+
+    favicon =
+      document.createElement('link');
+
+    favicon.rel = 'icon';
+
+    document.head.appendChild(
+      favicon
+    );
+  }
+
+  favicon.href = href;
+}
+
+
+// ======================================================
+// PAGE ANALYTICS
+// ======================================================
+
+export function trackPageView(
+  pageName
+) {
+
+  if (
+    typeof window.gtag !== 'function'
+  ) {
+    return;
+  }
+
+  window.gtag(
+    'event',
+    'page_view',
+    {
+
+      page_title:
+        pageName,
+
+      page_location:
+        window.location.href,
+
+      page_path:
+        window.location.pathname
+    }
+  );
 }

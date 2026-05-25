@@ -1,153 +1,294 @@
-import {
-  getUser
-} from '../lib/auth.js'
+// src/modules/dashboard.js
 
 import {
-
+  getMyProfile,
+  getMySessions,
+  getUpcomingSession,
   getAnnouncements,
-  getMySessions
-
-} from '../lib/db.js'
+  getUserProgress
+} from '../lib/db.js';
 
 import {
-  safeArray,
-  safeText
-} from '../utils/validators.js'
+  showLoader,
+  hideLoader,
+  renderEmptyState
+} from '../components/ui.js';
 
-// ─────────────────────────────────────
-// MAIN
-// ─────────────────────────────────────
+import {
+  formatDate,
+  formatTime
+} from '../utils/helpers.js';
 
-export async function loadDashboard() {
+
+// ======================================================
+// INIT DASHBOARD
+// ======================================================
+
+export async function initDashboard() {
 
   try {
 
-    showDashboardLoading()
-
-    const user =
-      await getUser()
-
-    if (!user) {
-      return
-    }
+    showLoader();
 
     const [
+      profile,
+      sessions,
+      upcomingSession,
       announcements,
-      sessions
+      progress
     ] = await Promise.all([
 
+      getMyProfile(),
+
+      getMySessions(),
+
+      getUpcomingSession(),
+
       getAnnouncements(),
-      getMySessions()
 
-    ])
+      getUserProgress()
+    ]);
 
-    renderWelcome(user)
+    renderWelcome(profile);
+
+    renderProgress(sessions, progress);
+
+    renderUpcomingSession(
+      upcomingSession
+    );
 
     renderAnnouncements(
       announcements
-    )
+    );
 
-    renderNextSession(
-      sessions
-    )
+    renderQuickActions();
 
-    renderStats(
+    renderRecentSessions(
       sessions
-    )
+    );
 
   } catch (error) {
 
-    console.error(
-      '[DASHBOARD_ERROR]',
-      error
-    )
+    console.error(error);
 
-    renderDashboardError()
+    renderDashboardError();
 
+  } finally {
+
+    hideLoader();
   }
-
 }
 
-// ─────────────────────────────────────
-// LOADING
-// ─────────────────────────────────────
 
-function showDashboardLoading() {
-
-  const sections = [
-
-    'dashboard-welcome',
-    'dashboard-announcements',
-    'dashboard-next-session',
-    'dashboard-stats'
-
-  ]
-
-  sections.forEach(id => {
-
-    const el =
-      document.getElementById(id)
-
-    if (!el) return
-
-    el.innerHTML = `
-
-      <div class="card dashboard-card skeleton-card">
-
-        <div class="skeleton skeleton-title"></div>
-
-        <div class="skeleton skeleton-text"></div>
-
-        <div class="skeleton skeleton-text short"></div>
-
-      </div>
-
-    `
-
-  })
-
-}
-
-// ─────────────────────────────────────
+// ======================================================
 // WELCOME
-// ─────────────────────────────────────
+// ======================================================
 
-function renderWelcome(user) {
+function renderWelcome(profile) {
 
   const container =
     document.getElementById(
       'dashboard-welcome'
-    )
+    );
 
-  if (!container) return
+  if (!container) return;
 
-  const fullName =
-    safeText(
-      user?.user_metadata?.full_name
-    )
+  const firstName =
+    profile.full_name.split(' ')[0];
 
   container.innerHTML = `
+    <div class="dashboard-welcome-card">
 
-    <div class="card dashboard-welcome-card">
+      <div>
 
-      <h1 class="dashboard-title">
-        Bienvenido,
-        ${fullName || 'usuario'}
-      </h1>
+        <h1 class="dashboard-title">
+          Hola, ${firstName}
+        </h1>
 
-      <p class="dashboard-subtitle">
-        Accede a tus sesiones, recursos y contenidos del programa.
+        <p class="dashboard-subtitle">
+
+          Bienvenido/a a tu plataforma de
+          intervención familiar y bienestar
+          digital.
+
+        </p>
+
+      </div>
+
+      <div class="dashboard-region">
+
+        <span class="dashboard-region-badge">
+          ${profile.region}
+        </span>
+
+      </div>
+
+    </div>
+  `;
+}
+
+
+// ======================================================
+// PROGRESS
+// ======================================================
+
+function renderProgress(
+  sessions = [],
+  progress = []
+) {
+
+  const container =
+    document.getElementById(
+      'dashboard-progress'
+    );
+
+  if (!container) return;
+
+  const completed =
+    progress.filter(
+      item => item.completed
+    ).length;
+
+  const total =
+    sessions.length;
+
+  const percentage =
+    total
+      ? Math.round(
+          (completed / total) * 100
+        )
+      : 0;
+
+  container.innerHTML = `
+    <div class="dashboard-widget">
+
+      <div class="dashboard-widget-header">
+
+        <h2>
+          Tu progreso
+        </h2>
+
+        <span class="dashboard-progress-count">
+          ${completed} / ${total}
+        </span>
+
+      </div>
+
+      <div class="dashboard-progress-bar">
+
+        <div
+          class="dashboard-progress-fill"
+          style="width:${percentage}%"
+        ></div>
+
+      </div>
+
+      <p class="dashboard-progress-text">
+
+        Has completado
+        ${completed}
+        ${
+          completed === 1
+            ? 'sesión'
+            : 'sesiones'
+        }
+
       </p>
 
     </div>
-
-  `
-
+  `;
 }
 
-// ─────────────────────────────────────
+
+// ======================================================
+// UPCOMING SESSION
+// ======================================================
+
+function renderUpcomingSession(
+  session
+) {
+
+  const container =
+    document.getElementById(
+      'dashboard-next-session'
+    );
+
+  if (!container) return;
+
+  if (!session) {
+
+    const empty =
+      renderEmptyState({
+
+        icon: '📅',
+
+        title:
+          'No hay próximas sesiones',
+
+        description:
+          'Las nuevas sesiones aparecerán aquí automáticamente.'
+      });
+
+    container.appendChild(empty);
+
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="dashboard-widget">
+
+      <div class="dashboard-widget-header">
+
+        <h2>
+          Próxima sesión
+        </h2>
+
+      </div>
+
+      <div class="next-session-card">
+
+        <div class="next-session-month">
+
+          Sesión
+          ${session.month_number}
+
+        </div>
+
+        <h3 class="next-session-title">
+          ${session.title}
+        </h3>
+
+        <div class="next-session-meta">
+
+          <span>
+            📅
+            ${formatDate(session.live_at)}
+          </span>
+
+          <span>
+            🕒
+            ${formatTime(session.live_at)}
+          </span>
+
+        </div>
+
+        <a
+          href="/src/pages/app/sessions.html"
+          class="btn btn-primary"
+        >
+          Ver sesiones
+        </a>
+
+      </div>
+
+    </div>
+  `;
+}
+
+
+// ======================================================
 // ANNOUNCEMENTS
-// ─────────────────────────────────────
+// ======================================================
 
 function renderAnnouncements(
   announcements = []
@@ -156,291 +297,239 @@ function renderAnnouncements(
   const container =
     document.getElementById(
       'dashboard-announcements'
-    )
+    );
 
-  if (!container) return
+  if (!container) return;
 
-  const items =
-    safeArray(announcements)
-
-  if (!items.length) {
-
-    container.innerHTML = `
-
-      <div class="card empty-state">
-
-        <h3>
-          No hay avisos disponibles
-        </h3>
-
-        <p>
-          Los nuevos avisos aparecerán aquí automáticamente.
-        </p>
-
-      </div>
-
-    `
-
-    return
+  if (!announcements.length) {
+    return;
   }
 
-  container.innerHTML = `
+  container.innerHTML =
+    announcements.map(item => `
 
-    <div class="dashboard-section-header">
+      <div
+        class="
+          announcement-card
+          announcement-${item.type}
+        "
+      >
 
-      <h2>
-        Avisos importantes
-      </h2>
+        <div class="announcement-content">
 
-    </div>
-
-    <div class="dashboard-cards">
-
-      ${items.map(item => `
-
-        <article class="card announcement-card">
-
-          <div class="announcement-top">
-
-            <span class="badge ${safeText(item.type)}">
-
-              ${safeText(item.type)}
-
-            </span>
-
-          </div>
-
-          <h3>
-            ${safeText(item.title)}
+          <h3 class="announcement-title">
+            ${item.title}
           </h3>
 
-          <p>
-            ${safeText(item.message)}
+          <p class="announcement-message">
+            ${item.message}
           </p>
 
-        </article>
+        </div>
 
-      `).join('')}
+      </div>
 
-    </div>
-
-  `
-
+    `).join('');
 }
 
-// ─────────────────────────────────────
-// NEXT SESSION
-// ─────────────────────────────────────
 
-function renderNextSession(
+// ======================================================
+// QUICK ACTIONS
+// ======================================================
+
+function renderQuickActions() {
+
+  const container =
+    document.getElementById(
+      'dashboard-actions'
+    );
+
+  if (!container) return;
+
+  const actions = [
+
+    {
+      label: 'Sesiones',
+      icon: '🎥',
+      href:
+        '/src/pages/app/sessions.html'
+    },
+
+    {
+      label: 'Recursos',
+      icon: '📚',
+      href:
+        '/src/pages/app/resources.html'
+    },
+
+    {
+      label: 'FAQ',
+      icon: '❓',
+      href:
+        '/src/pages/app/faq.html'
+    },
+
+    {
+      label: 'Contacto',
+      icon: '✉️',
+      href:
+        '/src/pages/app/contact.html'
+    }
+  ];
+
+  container.innerHTML =
+    actions.map(action => `
+
+      <a
+        href="${action.href}"
+        class="quick-action-card"
+      >
+
+        <div class="quick-action-icon">
+          ${action.icon}
+        </div>
+
+        <span class="quick-action-label">
+          ${action.label}
+        </span>
+
+      </a>
+
+    `).join('');
+}
+
+
+// ======================================================
+// RECENT SESSIONS
+// ======================================================
+
+function renderRecentSessions(
   sessions = []
 ) {
 
   const container =
     document.getElementById(
-      'dashboard-next-session'
-    )
+      'dashboard-recent-sessions'
+    );
 
-  if (!container) return
+  if (!container) return;
 
-  const items =
-    safeArray(sessions)
+  const available =
+    sessions
+      .filter(
+        session =>
+          session.status !==
+          'upcoming'
+      )
+      .slice(0, 3);
 
-  const next =
-    items.find(
-      item =>
-        item?.access_status === 'upcoming'
-    )
+  if (!available.length) {
 
-  if (!next) {
+    const empty =
+      renderEmptyState({
 
-    container.innerHTML = `
+        icon: '🎥',
 
-      <div class="card empty-state">
+        title:
+          'No hay sesiones disponibles',
 
-        <h3>
-          No hay próximas sesiones
+        description:
+          'Las sesiones aparecerán aquí automáticamente.'
+      });
+
+    container.appendChild(empty);
+
+    return;
+  }
+
+  container.innerHTML =
+    available.map(session => `
+
+      <div class="session-card">
+
+        <div class="session-card-header">
+
+          <span class="session-number">
+
+            Sesión
+            ${session.month_number}
+
+          </span>
+
+          <span
+            class="
+              session-status
+              session-status-${session.status}
+            "
+          >
+
+            ${getStatusLabel(
+              session.status
+            )}
+
+          </span>
+
+        </div>
+
+        <h3 class="session-title">
+          ${session.title}
         </h3>
 
-        <p>
-          Las próximas sesiones aparecerán aquí.
+        <p class="session-description">
+          ${session.description}
         </p>
 
       </div>
 
-    `
-
-    return
-  }
-
-  container.innerHTML = `
-
-    <div class="card next-session-card">
-
-      <div class="next-session-header">
-
-        <span class="badge info">
-          Próxima sesión
-        </span>
-
-      </div>
-
-      <h2>
-        Sesión ${safeText(next.month_number)}
-      </h2>
-
-      <h3>
-        ${safeText(next.title)}
-      </h3>
-
-      <p>
-        ${safeText(next.description)}
-      </p>
-
-      <div class="next-session-date">
-
-        ${formatDate(next.live_at)}
-
-      </div>
-
-    </div>
-
-  `
-
+    `).join('');
 }
 
-// ─────────────────────────────────────
-// STATS
-// ─────────────────────────────────────
 
-function renderStats(
-  sessions = []
-) {
+// ======================================================
+// HELPERS
+// ======================================================
 
-  const container =
-    document.getElementById(
-      'dashboard-stats'
-    )
+function getStatusLabel(status) {
 
-  if (!container) return
+  const labels = {
 
-  const items =
-    safeArray(sessions)
+    upcoming: 'Próximamente',
 
-  const available =
-    items.filter(
-      item =>
-        item.access_status === 'available'
-    ).length
+    available: 'Disponible',
 
-  const upcoming =
-    items.filter(
-      item =>
-        item.access_status === 'upcoming'
-    ).length
+    completed: 'Completada'
+  };
 
-  container.innerHTML = `
-
-    <div class="dashboard-stats-grid">
-
-      <div class="card stat-card">
-
-        <span class="stat-number">
-          ${available}
-        </span>
-
-        <span class="stat-label">
-          Sesiones disponibles
-        </span>
-
-      </div>
-
-      <div class="card stat-card">
-
-        <span class="stat-number">
-          ${upcoming}
-        </span>
-
-        <span class="stat-label">
-          Próximas sesiones
-        </span>
-
-      </div>
-
-    </div>
-
-  `
-
+  return labels[status] || status;
 }
 
-// ─────────────────────────────────────
+
+// ======================================================
 // ERROR
-// ─────────────────────────────────────
+// ======================================================
 
 function renderDashboardError() {
 
-  const sections = [
+  const container =
+    document.getElementById(
+      'dashboard-content'
+    );
 
-    'dashboard-welcome',
-    'dashboard-announcements',
-    'dashboard-next-session',
-    'dashboard-stats'
+  if (!container) return;
 
-  ]
+  const empty =
+    renderEmptyState({
 
-  sections.forEach(id => {
+      icon: '⚠️',
 
-    const el =
-      document.getElementById(id)
+      title:
+        'Error cargando el dashboard',
 
-    if (!el) return
+      description:
+        'Ha ocurrido un error inesperado. Inténtalo más tarde.'
+    });
 
-    el.innerHTML = `
+  container.innerHTML = '';
 
-      <div class="card empty-state">
-
-        <h3>
-          Error al cargar
-        </h3>
-
-        <p>
-          Ha ocurrido un problema al cargar el dashboard.
-        </p>
-
-      </div>
-
-    `
-
-  })
-
-}
-
-// ─────────────────────────────────────
-// DATE
-// ─────────────────────────────────────
-
-function formatDate(date) {
-
-  if (!date) {
-    return 'Fecha pendiente'
-  }
-
-  try {
-
-    return new Intl.DateTimeFormat(
-      'es-ES',
-      {
-
-        dateStyle: 'long',
-        timeStyle: 'short'
-
-      }
-    ).format(new Date(date))
-
-  } catch {
-
-    return 'Fecha inválida'
-
-  }
-
+  container.appendChild(empty);
 }

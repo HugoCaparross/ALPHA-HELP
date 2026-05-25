@@ -1,316 +1,459 @@
+// src/modules/sessions.js
+
 import {
   getMySessions,
-  getSessionResources,
+  getSessionById,
   markSessionCompleted
-} from '../lib/db.js'
+} from '../lib/db.js';
 
 import {
-  getUser
-} from '../lib/auth.js'
+  showLoader,
+  hideLoader,
+  showToast,
+  openModal,
+  renderEmptyState
+} from '../components/ui.js';
 
 import {
-  safeArray,
-  safeText
-} from '../utils/validators.js'
+  formatDate,
+  formatTime
+} from '../utils/helpers.js';
 
-// ─────────────────────────────────────
-// MAIN
-// ─────────────────────────────────────
 
-export async function loadSessions() {
+// ======================================================
+// INIT SESSIONS
+// ======================================================
+
+export async function initSessions() {
+
+  try {
+
+    showLoader();
+
+    const sessions =
+      await getMySessions();
+
+    renderSessions(sessions);
+
+  } catch (error) {
+
+    console.error(error);
+
+    renderSessionsError();
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+// ======================================================
+// RENDER SESSIONS
+// ======================================================
+
+function renderSessions(
+  sessions = []
+) {
 
   const container =
     document.getElementById(
       'sessions-grid'
-    )
+    );
 
-  if (!container) return
+  if (!container) return;
 
-  try {
+  if (!sessions.length) {
 
-    renderLoading(container)
+    const empty =
+      renderEmptyState({
 
-    const user =
-      await getUser()
+        icon: '🎥',
 
-    if (!user) return
+        title:
+          'No hay sesiones disponibles',
 
-    const sessions =
-      await getMySessions()
+        description:
+          'Las sesiones aparecerán automáticamente cuando estén disponibles.'
+      });
 
-    renderSessions(
-      container,
-      sessions,
-      user.id
-    )
+    container.appendChild(empty);
 
-  } catch (error) {
-
-    console.error(
-      '[SESSIONS_ERROR]',
-      error
-    )
-
-    renderError(container)
-
+    return;
   }
 
-}
+  container.innerHTML =
+    sessions.map(session => `
 
-// ─────────────────────────────────────
-// RENDER
-// ─────────────────────────────────────
+      <article
+        class="
+          session-card
+          session-${session.status}
+        "
+      >
 
-function renderSessions(
-  container,
-  sessions = [],
-  userId
-) {
+        <div class="session-card-top">
 
-  const items =
-    safeArray(sessions)
+          <span class="session-month">
 
-  if (!items.length) {
+            Sesión
+            ${session.month_number}
 
-    container.innerHTML = `
+          </span>
 
-      <div class="card empty-state">
+          <span
+            class="
+              session-status
+              status-${session.status}
+            "
+          >
 
-        <h3>
-          No hay sesiones disponibles
-        </h3>
-
-        <p>
-          Las nuevas sesiones aparecerán aquí automáticamente.
-        </p>
-
-      </div>
-
-    `
-
-    return
-  }
-
-  container.innerHTML = items.map(
-    session => {
-
-      const available =
-        session?.access_status === 'available'
-
-      return `
-
-        <article
-          class="card session-card"
-        >
-
-          <div class="session-top">
-
-            <span class="badge info">
-
-              Sesión
-              ${safeText(
-                session.month_number
-              )}
-
-            </span>
-
-            <span class="badge ${
-              available
-                ? 'success'
-                : 'warning'
-            }">
-
-              ${
-                available
-                  ? 'Disponible'
-                  : 'Próximamente'
-              }
-
-            </span>
-
-          </div>
-
-          <h2>
-            ${safeText(
-              session.title
+            ${getStatusLabel(
+              session.status
             )}
-          </h2>
 
-          <p>
-            ${safeText(
-              session.description
-            )}
-          </p>
-
-          <div class="session-actions">
-
-            ${
-              available &&
-              session.youtube_url
-                ? `
-                  <a
-                    href="${session.youtube_url}"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="button"
-                    data-session-id="${session.id}"
-                  >
-                    Ver sesión
-                  </a>
-                `
-                : `
-                  <button
-                    class="button button-secondary"
-                    disabled
-                  >
-                    No disponible
-                  </button>
-                `
-            }
-
-          </div>
-
-          <div
-            class="session-resources"
-            id="resources-${session.id}"
-          ></div>
-
-        </article>
-
-      `
-    }
-  ).join('')
-
-  initSessionEvents(
-    items,
-    userId
-  )
-
-}
-
-// ─────────────────────────────────────
-// EVENTS
-// ─────────────────────────────────────
-
-function initSessionEvents(
-  sessions,
-  userId
-) {
-
-  sessions.forEach(session => {
-
-    const link =
-      document.querySelector(
-        `[data-session-id="${session.id}"]`
-      )
-
-    if (!link) return
-
-    link.addEventListener(
-      'click',
-      async () => {
-
-        try {
-
-          await markSessionCompleted(
-            userId,
-            session.id
-          )
-
-          await loadResources(
-            session.id
-          )
-
-        } catch (error) {
-
-          console.error(
-            '[SESSION_PROGRESS_ERROR]',
-            error
-          )
-
-        }
-
-      }
-    )
-
-  })
-
-}
-
-// ─────────────────────────────────────
-// RESOURCES
-// ─────────────────────────────────────
-
-async function loadResources(
-  sessionId
-) {
-
-  const container =
-    document.getElementById(
-      `resources-${sessionId}`
-    )
-
-  if (!container) return
-
-  try {
-
-    container.innerHTML = `
-
-      <div class="resources-loading">
-
-        <span class="spinner-small"></span>
-
-      </div>
-
-    `
-
-    const resources =
-      await getSessionResources(
-        sessionId
-      )
-
-    const items =
-      safeArray(resources)
-
-    if (!items.length) {
-
-      container.innerHTML = `
-
-        <div class="empty-resources">
-
-          No hay recursos disponibles.
+          </span>
 
         </div>
 
-      `
+        <div class="session-card-body">
 
-      return
-    }
+          <h3 class="session-title">
+            ${session.title}
+          </h3>
 
-    container.innerHTML = `
+          <p class="session-description">
+            ${session.description}
+          </p>
 
-      <div class="resources-list">
+          ${
+            session.live_at
+              ? `
+                <div class="session-meta">
 
-        ${items.map(resource => `
+                  <span>
+                    📅
+                    ${formatDate(
+                      session.live_at
+                    )}
+                  </span>
+
+                  <span>
+                    🕒
+                    ${formatTime(
+                      session.live_at
+                    )}
+                  </span>
+
+                </div>
+              `
+              : ''
+          }
+
+        </div>
+
+        <div class="session-card-footer">
+
+          ${
+            session.status ===
+            'upcoming'
+
+              ? `
+                <button
+                  class="
+                    btn
+                    btn-disabled
+                  "
+                  disabled
+                >
+                  Próximamente
+                </button>
+              `
+
+              : `
+                <button
+                  class="
+                    btn
+                    btn-primary
+                    session-open-button
+                  "
+                  data-session-id="${session.id}"
+                >
+                  Ver sesión
+                </button>
+              `
+          }
+
+        </div>
+
+      </article>
+
+    `).join('');
+
+  initSessionButtons();
+}
+
+
+// ======================================================
+// SESSION BUTTONS
+// ======================================================
+
+function initSessionButtons() {
+
+  const buttons =
+    document.querySelectorAll(
+      '.session-open-button'
+    );
+
+  buttons.forEach(button => {
+
+    button.addEventListener(
+      'click',
+      async () => {
+
+        const sessionId =
+          button.dataset.sessionId;
+
+        await openSession(sessionId);
+      }
+    );
+  });
+}
+
+
+// ======================================================
+// OPEN SESSION
+// ======================================================
+
+async function openSession(
+  sessionId
+) {
+
+  try {
+
+    showLoader(
+      'Cargando sesión...'
+    );
+
+    const session =
+      await getSessionById(
+        sessionId
+      );
+
+    openModal({
+
+      title:
+        `Sesión ${session.month_number}`,
+
+      size: 'xl',
+
+      content:
+        renderSessionModal(
+          session
+        )
+    });
+
+    initCompleteSessionButton(
+      session.id
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    showToast(
+      'error',
+      'No se pudo cargar la sesión'
+    );
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+// ======================================================
+// SESSION MODAL
+// ======================================================
+
+function renderSessionModal(
+  session
+) {
+
+  return `
+    <div class="session-modal">
+
+      <div class="session-video">
+
+        ${renderVideo(session)}
+
+      </div>
+
+      <div class="session-content">
+
+        <h2 class="session-modal-title">
+          ${session.title}
+        </h2>
+
+        <p class="session-modal-description">
+          ${session.description}
+        </p>
+
+        ${
+          session.live_at
+            ? `
+              <div class="session-modal-date">
+
+                <span>
+                  📅
+                  ${formatDate(
+                    session.live_at
+                  )}
+                </span>
+
+                <span>
+                  🕒
+                  ${formatTime(
+                    session.live_at
+                  )}
+                </span>
+
+              </div>
+            `
+            : ''
+        }
+
+        ${renderResources(
+          session.session_resources
+        )}
+
+        <div class="session-modal-actions">
+
+          <button
+            class="
+              btn
+              btn-success
+            "
+            id="complete-session-button"
+            data-session-id="${session.id}"
+          >
+            Marcar como completada
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+  `;
+}
+
+
+// ======================================================
+// VIDEO
+// ======================================================
+
+function renderVideo(session) {
+
+  // YOUTUBE
+
+  if (session.youtube_url) {
+
+    return `
+      <iframe
+        src="${convertYoutubeEmbed(
+          session.youtube_url
+        )}"
+        title="${session.title}"
+        allowfullscreen
+      ></iframe>
+    `;
+  }
+
+  // RECORDING
+
+  if (session.recording_url) {
+
+    return `
+      <video controls>
+
+        <source
+          src="${session.recording_url}"
+          type="video/mp4"
+        >
+
+      </video>
+    `;
+  }
+
+  return `
+    <div class="session-video-empty">
+
+      <span>
+        El vídeo estará disponible próximamente
+      </span>
+
+    </div>
+  `;
+}
+
+
+// ======================================================
+// RESOURCES
+// ======================================================
+
+function renderResources(
+  resources = []
+) {
+
+  if (!resources.length) {
+
+    return `
+      <div class="session-resources-empty">
+
+        No hay recursos disponibles.
+
+      </div>
+    `;
+  }
+
+  return `
+    <div class="session-resources">
+
+      <h3>
+        Recursos descargables
+      </h3>
+
+      <div class="session-resources-grid">
+
+        ${resources.map(resource => `
 
           <a
-            href="${safeText(resource.url)}"
+            href="${resource.url}"
             target="_blank"
-            rel="noopener noreferrer"
-            class="resource-item"
+            class="resource-card"
           >
 
-            <span class="resource-type">
+            <div class="resource-icon">
 
-              ${safeText(resource.type)}
+              ${getResourceIcon(
+                resource.type
+              )}
 
-            </span>
+            </div>
 
-            <span>
+            <div class="resource-info">
 
-              ${safeText(resource.title)}
+              <h4>
+                ${resource.title}
+              </h4>
 
-            </span>
+              <p>
+                ${resource.description}
+              </p>
+
+            </div>
 
           </a>
 
@@ -318,79 +461,135 @@ async function loadResources(
 
       </div>
 
-    `
-
-  } catch (error) {
-
-    console.error(
-      '[RESOURCES_ERROR]',
-      error
-    )
-
-    container.innerHTML = `
-
-      <div class="empty-resources">
-
-        Error al cargar recursos.
-
-      </div>
-
-    `
-
-  }
-
-}
-
-// ─────────────────────────────────────
-// LOADING
-// ─────────────────────────────────────
-
-function renderLoading(container) {
-
-  container.innerHTML = `
-
-    <div class="sessions-grid">
-
-      ${Array(3).fill('').map(() => `
-
-        <div class="card session-card">
-
-          <div class="skeleton skeleton-title"></div>
-
-          <div class="skeleton skeleton-text"></div>
-
-          <div class="skeleton skeleton-text short"></div>
-
-        </div>
-
-      `).join('')}
-
     </div>
-
-  `
-
+  `;
 }
 
-// ─────────────────────────────────────
+
+// ======================================================
+// COMPLETE SESSION
+// ======================================================
+
+function initCompleteSessionButton(
+  sessionId
+) {
+
+  const button =
+    document.getElementById(
+      'complete-session-button'
+    );
+
+  if (!button) return;
+
+  button.addEventListener(
+    'click',
+    async () => {
+
+      try {
+
+        button.disabled = true;
+
+        await markSessionCompleted(
+          sessionId
+        );
+
+        showToast(
+          'success',
+          'Sesión completada'
+        );
+
+      } catch (error) {
+
+        console.error(error);
+
+        showToast(
+          'error',
+          'No se pudo actualizar el progreso'
+        );
+
+      } finally {
+
+        button.disabled = false;
+      }
+    }
+  );
+}
+
+
+// ======================================================
+// HELPERS
+// ======================================================
+
+function getStatusLabel(status) {
+
+  const labels = {
+
+    upcoming: 'Bloqueada',
+
+    available: 'Disponible',
+
+    completed: 'Completada'
+  };
+
+  return labels[status] || status;
+}
+
+
+function getResourceIcon(type) {
+
+  const icons = {
+
+    pdf: '📄',
+
+    link: '🔗',
+
+    video: '🎥'
+  };
+
+  return icons[type] || '📁';
+}
+
+
+function convertYoutubeEmbed(url) {
+
+  if (!url) return '';
+
+  const videoId =
+    url.split('v=')[1]?.split('&')[0]
+    || url.split('/').pop();
+
+  return `
+    https://www.youtube.com/embed/${videoId}
+  `;
+}
+
+
+// ======================================================
 // ERROR
-// ─────────────────────────────────────
+// ======================================================
 
-function renderError(container) {
+function renderSessionsError() {
 
-  container.innerHTML = `
+  const container =
+    document.getElementById(
+      'sessions-grid'
+    );
 
-    <div class="card empty-state">
+  if (!container) return;
 
-      <h3>
-        Error al cargar sesiones
-      </h3>
+  const empty =
+    renderEmptyState({
 
-      <p>
-        Ha ocurrido un problema al cargar las sesiones.
-      </p>
+      icon: '⚠️',
 
-    </div>
+      title:
+        'Error cargando las sesiones',
 
-  `
+      description:
+        'Ha ocurrido un error inesperado.'
+    });
 
+  container.innerHTML = '';
+
+  container.appendChild(empty);
 }

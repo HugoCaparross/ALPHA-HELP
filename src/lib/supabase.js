@@ -1,279 +1,359 @@
-import { createClient }
-from '@supabase/supabase-js'
+// src/lib/supabase.js
 
-// ─────────────────────────────────────
-// ENV
-// ─────────────────────────────────────
+import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl =
-  import.meta.env.VITE_SUPABASE_URL
 
-const supabaseAnonKey =
-  import.meta.env.VITE_SUPABASE_ANON_KEY
+// ======================================================
+// ENV VARIABLES
+// ======================================================
 
-// ─────────────────────────────────────
-// ENV VALIDATION
-// ─────────────────────────────────────
+const SUPABASE_URL =
+  import.meta.env.VITE_SUPABASE_URL;
 
-if (!supabaseUrl) {
+const SUPABASE_ANON_KEY =
+  import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-  throw new Error(
-    'Missing VITE_SUPABASE_URL'
-  )
 
-}
+// ======================================================
+// VALIDATION
+// ======================================================
 
-if (!supabaseAnonKey) {
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 
   throw new Error(
-    'Missing VITE_SUPABASE_ANON_KEY'
-  )
-
+    'Supabase environment variables are missing'
+  );
 }
 
-// Nunca permitir service_role
-if (
-  supabaseAnonKey.includes(
-    'service_role'
-  )
-) {
 
-  throw new Error(
-    'SECURITY ERROR: service_role detected.'
-  )
-
-}
-
-// URL validation
-try {
-
-  new URL(supabaseUrl)
-
-} catch {
-
-  throw new Error(
-    'Invalid Supabase URL.'
-  )
-
-}
-
-// ─────────────────────────────────────
+// ======================================================
 // CLIENT
-// ─────────────────────────────────────
+// ======================================================
 
-export const supabase =
-  createClient(
+export const supabase = createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY,
+  {
 
-    supabaseUrl,
-    supabaseAnonKey,
+    auth: {
 
-    {
+      persistSession: true,
 
-      auth: {
+      autoRefreshToken: true,
 
-        persistSession: true,
+      detectSessionInUrl: true,
 
-        autoRefreshToken: true,
+      flowType: 'pkce'
+    },
 
-        detectSessionInUrl: true,
+    global: {
 
-        storageKey:
-          'alpha-help-auth',
-
-        flowType: 'pkce'
-
-      },
-
-      global: {
-
-        headers: {
-
-          'X-Client-Info':
-            'alpha-help-web'
-
-        }
-
+      headers: {
+        'X-Client-Info': 'alpha-help-web'
       }
-
     }
+  }
+);
 
-  )
 
-// ─────────────────────────────────────
-// SESSION
-// ─────────────────────────────────────
+// ======================================================
+// SESSION HELPERS
+// ======================================================
 
 export async function getSession() {
 
-  try {
+  const {
+    data,
+    error
+  } = await supabase.auth.getSession();
 
-    const {
-      data,
-      error
-    } = await supabase.auth.getSession()
-
-    if (error) {
-
-      console.error(
-        '[SESSION_ERROR]',
-        error.message
-      )
-
-      return null
-
-    }
-
-    return data?.session || null
-
-  } catch (error) {
-
-    console.error(
-      '[SESSION_FATAL]',
-      error
-    )
-
-    return null
-
+  if (error) {
+    console.error(error);
+    return null;
   }
 
+  return data.session;
 }
 
-// ─────────────────────────────────────
-// USER
-// ─────────────────────────────────────
+
+// ======================================================
+// CURRENT USER
+// ======================================================
 
 export async function getCurrentUser() {
 
+  const {
+    data,
+    error
+  } = await supabase.auth.getUser();
+
+  if (error) {
+    console.error(error);
+    return null;
+  }
+
+  return data.user;
+}
+
+
+// ======================================================
+// SIGN OUT
+// ======================================================
+
+export async function clearSession() {
+
+  const { error } =
+    await supabase.auth.signOut();
+
+  if (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
+
+// ======================================================
+// AUTH LISTENER
+// ======================================================
+
+export function onAuthChange(callback) {
+
+  return supabase.auth.onAuthStateChange(
+    async (event, session) => {
+
+      callback(event, session);
+    }
+  );
+}
+
+
+// ======================================================
+// PASSWORD RECOVERY
+// ======================================================
+
+export async function sendPasswordRecovery(
+  email
+) {
+
+  const {
+    error
+  } = await supabase.auth.resetPasswordForEmail(
+    email,
+    {
+      redirectTo:
+        `${window.location.origin}/src/pages/public/reset-password.html`
+    }
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return true;
+}
+
+
+// ======================================================
+// UPDATE PASSWORD
+// ======================================================
+
+export async function updateUserPassword(
+  password
+) {
+
+  const {
+    error
+  } = await supabase.auth.updateUser({
+    password
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return true;
+}
+
+
+// ======================================================
+// GOOGLE AUTH
+// ======================================================
+
+export async function signInWithGoogle() {
+
+  const {
+    error
+  } = await supabase.auth.signInWithOAuth({
+
+    provider: 'google',
+
+    options: {
+
+      redirectTo:
+        `${window.location.origin}/src/pages/app/dashboard.html`,
+
+      queryParams: {
+        access_type: 'offline',
+        prompt: 'consent'
+      }
+    }
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
+
+// ======================================================
+// SESSION EXPIRED CHECK
+// ======================================================
+
+export function isSessionExpired(session) {
+
+  if (!session) return true;
+
+  const expiresAt =
+    session.expires_at * 1000;
+
+  return Date.now() > expiresAt;
+}
+
+
+// ======================================================
+// REFRESH SESSION
+// ======================================================
+
+export async function refreshSession() {
+
+  const {
+    data,
+    error
+  } = await supabase.auth.refreshSession();
+
+  if (error) {
+    throw error;
+  }
+
+  return data.session;
+}
+
+
+// ======================================================
+// STORAGE HELPERS
+// ======================================================
+
+export async function getPrivateFileUrl(
+  path,
+  expiresIn = 3600
+) {
+
+  const {
+    data,
+    error
+  } = await supabase
+    .storage
+    .from('resources')
+    .createSignedUrl(path, expiresIn);
+
+  if (error) {
+    throw error;
+  }
+
+  return data.signedUrl;
+}
+
+
+// ======================================================
+// AVATAR UPLOAD
+// ======================================================
+
+export async function uploadAvatar(
+  file,
+  userId
+) {
+
+  const fileExt =
+    file.name.split('.').pop();
+
+  const fileName =
+    `${Date.now()}.${fileExt}`;
+
+  const filePath =
+    `${userId}/${fileName}`;
+
+  const {
+    error
+  } = await supabase
+    .storage
+    .from('avatars')
+    .upload(filePath, file, {
+
+      cacheControl: '3600',
+
+      upsert: true
+    });
+
+  if (error) {
+    throw error;
+  }
+
+  const {
+    data
+  } = supabase
+    .storage
+    .from('avatars')
+    .getPublicUrl(filePath);
+
+  return data.publicUrl;
+}
+
+
+// ======================================================
+// DELETE FILE
+// ======================================================
+
+export async function deleteStorageFile(
+  bucket,
+  path
+) {
+
+  const {
+    error
+  } = await supabase
+    .storage
+    .from(bucket)
+    .remove([path]);
+
+  if (error) {
+    throw error;
+  }
+
+  return true;
+}
+
+
+// ======================================================
+// HEALTH CHECK
+// ======================================================
+
+export async function testConnection() {
+
   try {
 
     const {
-      data,
       error
-    } = await supabase.auth.getUser()
+    } = await supabase
+      .from('profiles')
+      .select('id')
+      .limit(1);
 
-    if (error) {
-
-      console.error(
-        '[USER_ERROR]',
-        error.message
-      )
-
-      return null
-
-    }
-
-    return data?.user || null
+    return !error;
 
   } catch (error) {
 
-    console.error(
-      '[USER_FATAL]',
-      error
-    )
+    console.error(error);
 
-    return null
-
+    return false;
   }
-
 }
-
-// ─────────────────────────────────────
-// AUTH LISTENER
-// ─────────────────────────────────────
-
-supabase.auth.onAuthStateChange(
-  async (
-    event,
-    session
-  ) => {
-
-    console.info(
-      '[AUTH_EVENT]',
-      event
-    )
-
-    const path =
-      window.location.pathname
-
-    const protectedPage =
-
-      path.includes('/app/')
-      || path.includes('/admin/')
-
-    // Session expired
-    if (
-
-      (
-        event === 'SIGNED_OUT'
-        || !session
-      )
-
-      && protectedPage
-
-    ) {
-
-      window.location.replace(
-        '/src/pages/public/login.html'
-      )
-
-    }
-
-    // Login success
-    if (
-      event === 'SIGNED_IN'
-    ) {
-
-      const isAuthPage =
-
-        path.includes('/login')
-        || path.includes('/register')
-
-      if (isAuthPage) {
-
-        window.location.replace(
-          '/src/pages/app/dashboard.html'
-        )
-
-      }
-
-    }
-
-    // Token refreshed
-    if (
-      event === 'TOKEN_REFRESHED'
-    ) {
-
-      console.info(
-        '[TOKEN_REFRESHED]'
-      )
-
-    }
-
-  }
-)
-
-// ─────────────────────────────────────
-// NETWORK
-// ─────────────────────────────────────
-
-window.addEventListener(
-  'offline',
-  () => {
-
-    console.warn(
-      '[NETWORK] Offline.'
-    )
-
-  }
-)
-
-window.addEventListener(
-  'online',
-  () => {
-
-    console.info(
-      '[NETWORK] Online.'
-    )
-
-  }
-)

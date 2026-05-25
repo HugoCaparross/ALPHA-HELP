@@ -1,101 +1,62 @@
-import { supabase } from './supabase.js'
+// src/lib/db.js
 
-// ─────────────────────────────────────
-// ERROR HANDLER
-// ─────────────────────────────────────
+import { supabase } from './supabase.js';
 
-function handleError(error, context) {
 
-  console.error(
-    `[DB_ERROR] ${context}`,
-    error
-  )
-
-  throw new Error(
-    'Ha ocurrido un error al cargar los datos.'
-  )
-}
-
-// ─────────────────────────────────────
+// ======================================================
 // PROFILE
-// ─────────────────────────────────────
+// ======================================================
 
-export async function getProfile(userId) {
-
-  if (!userId) {
-    throw new Error(
-      'Usuario inválido.'
-    )
-  }
+export async function getMyProfile() {
 
   const {
     data,
     error
   } = await supabase
     .from('profiles')
-    .select(`
-      id,
-      email,
-      full_name,
-      is_admin,
-      region,
-      enrolled_at,
-      created_at
-    `)
-    .eq('id', userId)
-    .single()
+    .select('*')
+    .single();
 
   if (error) {
-    handleError(error, 'getProfile')
+    throw error;
   }
 
-  return data || null
+  return data;
 }
 
-// ─────────────────────────────────────
-// UPDATE PROFILE
-// ─────────────────────────────────────
 
-export async function updateProfile(
-  userId,
-  payload = {}
+export async function updateMyProfile(
+  updates = {}
 ) {
 
-  if (!userId) {
-    throw new Error(
-      'Usuario inválido.'
-    )
-  }
-
-  const cleanPayload = {
-
-    full_name:
-      payload.full_name?.trim() || '',
-
-    region:
-      payload.region || 'ES'
-  }
+  const {
+    data: userData
+  } = await supabase.auth.getUser();
 
   const {
     data,
     error
   } = await supabase
     .from('profiles')
-    .update(cleanPayload)
-    .eq('id', userId)
+    .update({
+      ...updates,
+      updated_at: new Date()
+    })
+    .eq('id', userData.user.id)
     .select()
-    .single()
+    .single();
 
   if (error) {
-    handleError(error, 'updateProfile')
+    throw error;
   }
 
-  return data
+  return data;
 }
 
-// ─────────────────────────────────────
+
+// ======================================================
 // SESSIONS
-// ─────────────────────────────────────
+// ======================================================
 
 export async function getMySessions() {
 
@@ -104,28 +65,17 @@ export async function getMySessions() {
     error
   } = await supabase.rpc(
     'get_my_sessions'
-  )
+  );
 
   if (error) {
-    handleError(error, 'getMySessions')
+    throw error;
   }
 
-  return Array.isArray(data)
-    ? data
-    : []
+  return data;
 }
 
-// ─────────────────────────────────────
-// SINGLE SESSION
-// ─────────────────────────────────────
 
 export async function getSessionById(id) {
-
-  if (!id) {
-    throw new Error(
-      'Sesión inválida.'
-    )
-  }
 
   const {
     data,
@@ -133,38 +83,87 @@ export async function getSessionById(id) {
   } = await supabase
     .from('sessions')
     .select(`
-      id,
-      title,
-      description,
-      youtube_url,
-      recording_url,
-      month_number,
-      live_at,
-      is_published
+      *,
+      session_resources (*)
     `)
     .eq('id', id)
-    .single()
+    .single();
 
   if (error) {
-    handleError(error, 'getSessionById')
+    throw error;
   }
 
-  return data || null
+  return data;
 }
 
-// ─────────────────────────────────────
-// SESSION RESOURCES
-// ─────────────────────────────────────
 
-export async function getSessionResources(
+export async function getUpcomingSession() {
+
+  const {
+    data,
+    error
+  } = await supabase
+    .from('sessions')
+    .select('*')
+    .eq('is_published', true)
+    .gte('live_at', new Date().toISOString())
+    .order('live_at', {
+      ascending: true
+    })
+    .limit(1)
+    .single();
+
+  if (error) {
+    return null;
+  }
+
+  return data;
+}
+
+
+export async function markSessionCompleted(
   sessionId
 ) {
 
-  if (!sessionId) {
-    throw new Error(
-      'Sesión inválida.'
-    )
+  const {
+    data: userData
+  } = await supabase.auth.getUser();
+
+  const {
+    data,
+    error
+  } = await supabase
+    .from('user_progress')
+    .upsert({
+
+      user_id: userData.user.id,
+
+      session_id: sessionId,
+
+      watched: true,
+
+      completed: true,
+
+      completed_at:
+        new Date().toISOString()
+
+    })
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
   }
+
+  return data;
+}
+
+
+// ======================================================
+// RESOURCES
+// ======================================================
+
+export async function getResources() {
 
   const {
     data,
@@ -172,75 +171,27 @@ export async function getSessionResources(
   } = await supabase
     .from('session_resources')
     .select(`
-      id,
-      title,
-      description,
-      type,
-      url,
-      sort_order
+      *,
+      sessions (
+        title,
+        month_number
+      )
     `)
-    .eq('session_id', sessionId)
     .order('sort_order', {
       ascending: true
-    })
+    });
 
   if (error) {
-    handleError(error, 'getSessionResources')
+    throw error;
   }
 
-  return Array.isArray(data)
-    ? data
-    : []
+  return data;
 }
 
-// ─────────────────────────────────────
-// USER PROGRESS
-// ─────────────────────────────────────
 
-export async function markSessionCompleted(
-  userId,
-  sessionId
-) {
-
-  if (!userId || !sessionId) {
-    throw new Error(
-      'Datos inválidos.'
-    )
-  }
-
-  const payload = {
-    user_id: userId,
-    session_id: sessionId,
-    watched: true,
-    completed: true,
-    completed_at: new Date()
-      .toISOString()
-  }
-
-  const {
-    data,
-    error
-  } = await supabase
-    .from('user_progress')
-    .upsert(payload, {
-      onConflict: 'user_id,session_id'
-    })
-    .select()
-    .single()
-
-  if (error) {
-    handleError(
-      error,
-      'markSessionCompleted'
-    )
-  }
-
-  return data
-}
-
-// ─────────────────────────────────────
+// ======================================================
 // ANNOUNCEMENTS
-// ─────────────────────────────────────
+// ======================================================
 
 export async function getAnnouncements() {
 
@@ -249,161 +200,333 @@ export async function getAnnouncements() {
     error
   } = await supabase
     .from('announcements')
-    .select(`
-      id,
-      title,
-      message,
-      type,
-      starts_at,
-      ends_at
-    `)
+    .select('*')
+    .eq('is_active', true)
     .order('created_at', {
       ascending: false
-    })
+    });
 
   if (error) {
-    handleError(
-      error,
-      'getAnnouncements'
-    )
+    throw error;
   }
 
-  return Array.isArray(data)
-    ? data
-    : []
+  return data;
 }
 
-// ─────────────────────────────────────
-// ADMIN
-// ─────────────────────────────────────
 
-export async function getUsers() {
+// ======================================================
+// USER PROGRESS
+// ======================================================
+
+export async function getUserProgress() {
+
+  const {
+    data,
+    error
+  } = await supabase
+    .from('user_progress')
+    .select(`
+      *,
+      sessions (
+        title,
+        month_number
+      )
+    `);
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+
+// ======================================================
+// ADMIN USERS
+// ======================================================
+
+export async function adminGetUsers() {
 
   const {
     data,
     error
   } = await supabase
     .from('profiles')
-    .select(`
-      id,
-      email,
-      full_name,
-      region,
-      is_admin,
-      enrolled_at
-    `)
+    .select('*')
     .order('created_at', {
       ascending: false
-    })
+    });
 
   if (error) {
-    handleError(error, 'getUsers')
+    throw error;
   }
 
-  return Array.isArray(data)
-    ? data
-    : []
+  return data;
 }
 
-// ─────────────────────────────────────
-// ADMIN ANNOUNCEMENTS
-// ─────────────────────────────────────
 
-export async function createAnnouncement(
-  payload = {}
+export async function adminGetUserById(
+  userId
 ) {
 
-  const cleanPayload = {
+  const {
+    data,
+    error
+  } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single();
 
-    title:
-      payload.title?.trim() || '',
-
-    message:
-      payload.message?.trim() || '',
-
-    type:
-      payload.type || 'info',
-
-    region:
-      payload.region || null,
-
-    is_active: true
+  if (error) {
+    throw error;
   }
+
+  return data;
+}
+
+
+export async function adminUpdateUser(
+  userId,
+  updates = {}
+) {
+
+  const {
+    data,
+    error
+  } = await supabase
+    .from('profiles')
+    .update({
+      ...updates,
+      updated_at: new Date()
+    })
+    .eq('id', userId)
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+
+export async function adminDeleteUser(
+  userId
+) {
+
+  const {
+    error
+  } = await supabase
+    .from('profiles')
+    .delete()
+    .eq('id', userId);
+
+  if (error) {
+    throw error;
+  }
+
+  return true;
+}
+
+
+// ======================================================
+// ADMIN SESSIONS
+// ======================================================
+
+export async function adminGetSessions() {
+
+  const {
+    data,
+    error
+  } = await supabase
+    .from('sessions')
+    .select('*')
+    .order('month_number', {
+      ascending: true
+    });
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+
+export async function adminCreateSession(
+  session
+) {
+
+  const {
+    data,
+    error
+  } = await supabase
+    .from('sessions')
+    .insert(session)
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+
+export async function adminUpdateSession(
+  sessionId,
+  updates
+) {
+
+  const {
+    data,
+    error
+  } = await supabase
+    .from('sessions')
+    .update({
+      ...updates,
+      updated_at: new Date()
+    })
+    .eq('id', sessionId)
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+
+export async function adminDeleteSession(
+  sessionId
+) {
+
+  const {
+    error
+  } = await supabase
+    .from('sessions')
+    .delete()
+    .eq('id', sessionId);
+
+  if (error) {
+    throw error;
+  }
+
+  return true;
+}
+
+
+// ======================================================
+// SESSION RESOURCES
+// ======================================================
+
+export async function adminCreateResource(
+  resource
+) {
+
+  const {
+    data,
+    error
+  } = await supabase
+    .from('session_resources')
+    .insert(resource)
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+
+export async function adminDeleteResource(
+  resourceId
+) {
+
+  const {
+    error
+  } = await supabase
+    .from('session_resources')
+    .delete()
+    .eq('id', resourceId);
+
+  if (error) {
+    throw error;
+  }
+
+  return true;
+}
+
+
+// ======================================================
+// ANNOUNCEMENTS ADMIN
+// ======================================================
+
+export async function adminCreateAnnouncement(
+  announcement
+) {
 
   const {
     data,
     error
   } = await supabase
     .from('announcements')
-    .insert(cleanPayload)
+    .insert(announcement)
     .select()
-    .single()
+    .single();
 
   if (error) {
-    handleError(
-      error,
-      'createAnnouncement'
-    )
+    throw error;
   }
 
-  return data
+  return data;
 }
 
-// ─────────────────────────────────────
-// STORAGE
-// ─────────────────────────────────────
 
-export async function uploadAvatar(
-  userId,
-  file
+export async function adminUpdateAnnouncement(
+  id,
+  updates
 ) {
-
-  if (!userId || !file) {
-    throw new Error(
-      'Archivo inválido.'
-    )
-  }
-
-  const fileExt =
-    file.name.split('.').pop()
-
-  const fileName =
-    `${userId}/${crypto.randomUUID()}.${fileExt}`
 
   const {
     data,
     error
-  } = await supabase.storage
-    .from('avatars')
-    .upload(fileName, file, {
-      upsert: true
-    })
+  } = await supabase
+    .from('announcements')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
 
   if (error) {
-    handleError(
-      error,
-      'uploadAvatar'
-    )
+    throw error;
   }
 
-  return data
+  return data;
 }
 
-// ─────────────────────────────────────
-// GET AVATAR URL
-// ─────────────────────────────────────
 
-export function getAvatarUrl(path) {
-
-  if (!path) {
-    return null
-  }
+export async function adminDeleteAnnouncement(
+  id
+) {
 
   const {
-    data
-  } = supabase.storage
-    .from('avatars')
-    .getPublicUrl(path)
+    error
+  } = await supabase
+    .from('announcements')
+    .delete()
+    .eq('id', id);
 
-  return data?.publicUrl || null
+  if (error) {
+    throw error;
+  }
+
+  return true;
 }
