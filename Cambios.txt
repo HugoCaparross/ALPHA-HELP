@@ -1,6 +1,0 @@
-Cambios:
-Quitamos en Crear Cuenta el nombre y apellido.
-Pantalla de inicio, donde se explica el proyecto, consentimientos y se da la opción de registrarse o iniciar sesión.
-Hacer que el usuario vaya a donde nos interese. Que son Cuestionarios y Grabaciones
-Acompañamiento profesional, cambiarlo a contenidos profesionales o algo así.
-Base de datos de cuestionarios, escala Liker en número directamente.
