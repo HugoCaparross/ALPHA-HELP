@@ -1,5 +1,3 @@
-// src/lib/auth.js
-
 import { supabase } from './supabase.js';
 
 import {
@@ -9,6 +7,17 @@ import {
 import {
   showToast
 } from '../components/ui.js';
+
+
+// ======================================================
+// CONSTANTS
+// ======================================================
+
+const LOGIN_REDIRECT =
+  '/src/pages/app/dashboard.html';
+
+const PUBLIC_LOGIN =
+  '/src/pages/public/login.html';
 
 
 // ======================================================
@@ -44,6 +53,9 @@ export async function login(data = {}) {
       'success',
       'Sesión iniciada correctamente'
     );
+
+    window.location.href =
+      LOGIN_REDIRECT;
 
     return authData;
 
@@ -92,7 +104,7 @@ export async function register(data = {}) {
       options: {
 
         emailRedirectTo:
-          `${window.location.origin}/src/pages/public/login.html`,
+          `${window.location.origin}${PUBLIC_LOGIN}`,
 
         data: {
 
@@ -126,37 +138,7 @@ export async function register(data = {}) {
 
 
 // ======================================================
-// LOGOUT
-// ======================================================
-
-export async function logout() {
-
-  try {
-
-    const { error } =
-      await supabase.auth.signOut();
-
-    if (error) {
-      throw error;
-    }
-
-    window.location.href =
-      '/src/pages/public/login.html';
-
-  } catch (error) {
-
-    console.error(error);
-
-    showToast(
-      'error',
-      'No se pudo cerrar sesión'
-    );
-  }
-}
-
-
-// ======================================================
-// LOGIN GOOGLE
+// GOOGLE AUTH
 // ======================================================
 
 export async function loginWithGoogle() {
@@ -165,14 +147,22 @@ export async function loginWithGoogle() {
 
     const {
       error
-    } = await supabase.auth.signInWithOAuth({
+    } =
+    await supabase.auth.signInWithOAuth({
 
       provider: 'google',
 
       options: {
 
         redirectTo:
-          `${window.location.origin}/src/pages/app/dashboard.html`
+          `${window.location.origin}${LOGIN_REDIRECT}`,
+
+        queryParams: {
+
+          access_type: 'offline',
+
+          prompt: 'select_account'
+        }
       }
     });
 
@@ -193,6 +183,41 @@ export async function loginWithGoogle() {
 
 
 // ======================================================
+// LOGOUT
+// ======================================================
+
+export async function logout() {
+
+  try {
+
+    const {
+      error
+    } = await supabase.auth.signOut();
+
+    if (error) {
+      throw error;
+    }
+
+    localStorage.clear();
+
+    sessionStorage.clear();
+
+    window.location.href =
+      PUBLIC_LOGIN;
+
+  } catch (error) {
+
+    console.error(error);
+
+    showToast(
+      'error',
+      'No se pudo cerrar sesión'
+    );
+  }
+}
+
+
+// ======================================================
 // RECOVER PASSWORD
 // ======================================================
 
@@ -204,7 +229,8 @@ export async function recoverPassword(
 
     const {
       error
-    } = await supabase.auth.resetPasswordForEmail(
+    } =
+    await supabase.auth.resetPasswordForEmail(
       email,
       {
 
@@ -261,6 +287,13 @@ export async function updatePassword(
       'Contraseña actualizada correctamente'
     );
 
+    setTimeout(() => {
+
+      window.location.href =
+        PUBLIC_LOGIN;
+
+    }, 1200);
+
     return true;
 
   } catch (error) {
@@ -275,7 +308,7 @@ export async function updatePassword(
 
 
 // ======================================================
-// GET CURRENT USER
+// GET USER
 // ======================================================
 
 export async function getCurrentUser() {
@@ -342,7 +375,7 @@ export async function requireAuth() {
   if (!session) {
 
     window.location.href =
-      '/src/pages/public/login.html';
+      PUBLIC_LOGIN;
 
     return false;
   }
@@ -350,6 +383,129 @@ export async function requireAuth() {
   return true;
 }
 
+
+// ======================================================
+// REQUIRE GUEST
+// ======================================================
+
+export async function requireGuest() {
+
+  const session =
+    await getSession();
+
+  if (session) {
+
+    window.location.href =
+      LOGIN_REDIRECT;
+
+    return false;
+  }
+
+  return true;
+}
+
+
+// ======================================================
+// AUTH LISTENER
+// ======================================================
+
+export function listenAuthChanges(
+  callback
+) {
+
+  return supabase.auth.onAuthStateChange(
+
+    async (event, session) => {
+
+      callback(event, session);
+
+      if (
+        event === 'SIGNED_OUT'
+      ) {
+
+        localStorage.clear();
+
+        sessionStorage.clear();
+      }
+    }
+  );
+}
+
+
+// ======================================================
+// ERROR HANDLER
+// ======================================================
+
+function getAuthErrorMessage(error) {
+
+  const message =
+    error?.message?.toLowerCase() || '';
+
+  if (
+    message.includes(
+      'invalid login credentials'
+    )
+  ) {
+
+    return 'Email o contraseña incorrectos';
+  }
+
+  if (
+    message.includes(
+      'email not confirmed'
+    )
+  ) {
+
+    return 'Debes verificar tu email antes de iniciar sesión';
+  }
+
+  if (
+    message.includes(
+      'user already registered'
+    )
+  ) {
+
+    return 'Este email ya está registrado';
+  }
+
+  if (
+    message.includes(
+      'password'
+    )
+  ) {
+
+    return 'La contraseña no cumple los requisitos';
+  }
+
+  if (
+    message.includes(
+      'too many requests'
+    )
+  ) {
+
+    return 'Demasiados intentos. Inténtalo más tarde';
+  }
+
+  if (
+    message.includes(
+      'network'
+    )
+  ) {
+
+    return 'Error de conexión';
+  }
+
+  if (
+    message.includes(
+      'email'
+    )
+  ) {
+
+    return 'Error relacionado con el email';
+  }
+
+  return 'Ha ocurrido un error inesperado';
+}
 
 // ======================================================
 // REQUIRE ADMIN
@@ -370,20 +526,17 @@ export async function requireAdmin() {
       return false;
     }
 
-    const {
-      data,
-      error
-    } = await supabase
-      .from('profiles')
-      .select('is_admin')
-      .eq('id', session.user.id)
-      .single();
+    const user =
+      session.user;
 
-    if (error) {
-      throw error;
-    }
+    const role =
+      user?.user_metadata?.role ||
 
-    if (!data.is_admin) {
+      user?.app_metadata?.role ||
+
+      'user';
+
+    if (role !== 'admin') {
 
       window.location.href =
         '/src/pages/app/dashboard.html';
@@ -395,126 +548,14 @@ export async function requireAdmin() {
 
   } catch (error) {
 
-    console.error(error);
+    console.error(
+      'Admin guard error:',
+      error
+    );
 
     window.location.href =
       '/src/pages/public/login.html';
 
     return false;
   }
-}
-
-
-// ======================================================
-// LISTEN AUTH CHANGES
-// ======================================================
-
-export function listenAuthChanges(
-  callback
-) {
-
-  return supabase.auth.onAuthStateChange(
-    async (event, session) => {
-
-      callback(event, session);
-    }
-  );
-}
-
-
-// ======================================================
-// VERIFY SESSION
-// ======================================================
-
-export async function verifySession() {
-
-  const session =
-    await getSession();
-
-  if (!session) {
-    return false;
-  }
-
-  return true;
-}
-
-
-// ======================================================
-// REFRESH SESSION
-// ======================================================
-
-export async function refreshSession() {
-
-  try {
-
-    const {
-      data,
-      error
-    } = await supabase.auth.refreshSession();
-
-    if (error) {
-      throw error;
-    }
-
-    return data.session;
-
-  } catch (error) {
-
-    console.error(error);
-
-    return null;
-  }
-}
-
-
-// ======================================================
-// GET AUTH ERROR MESSAGE
-// ======================================================
-
-function getAuthErrorMessage(error) {
-
-  const message =
-    error?.message?.toLowerCase() || '';
-
-  // LOGIN
-
-  if (
-    message.includes('invalid login credentials')
-  ) {
-    return 'Email o contraseña incorrectos';
-  }
-
-  // REGISTER
-
-  if (
-    message.includes('user already registered')
-  ) {
-    return 'Este email ya está registrado';
-  }
-
-  // PASSWORD
-
-  if (
-    message.includes('password')
-  ) {
-    return 'La contraseña no cumple los requisitos';
-  }
-
-  // RATE LIMIT
-
-  if (
-    message.includes('too many requests')
-  ) {
-    return 'Demasiados intentos. Inténtalo más tarde';
-  }
-
-  // EMAIL
-
-  if (
-    message.includes('email')
-  ) {
-    return 'Error relacionado con el email';
-  }
-
-  return 'Ha ocurrido un error inesperado';
 }

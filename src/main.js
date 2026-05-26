@@ -1,56 +1,118 @@
-// src/main.js
+// ======================================================
+// ROUTER
+// ======================================================
 
 import {
+
   initRouter,
+
   getCurrentPage
+
 } from './lib/router.js';
 
+
+// ======================================================
+// AUTH
+// ======================================================
+
 import {
+
   listenAuthChanges,
-  getSession
+
+  getSession,
+
+  loginWithGoogle
+
 } from './lib/auth.js';
 
+
+// ======================================================
+// LAYOUT
+// ======================================================
+
 import {
+
   renderPrivateLayout
+
 } from './components/layout.js';
 
+
+// ======================================================
+// UI
+// ======================================================
+
 import {
+
   initDropdowns,
+
   initAccordions
+
 } from './components/ui.js';
 
-import {
-  applyLoginSEO,
-  applyDashboardSEO,
-  applySessionsSEO,
-  applyResourcesSEO,
-  applyProfileSEO,
-  applyAdminSEO,
-  trackPageView,
-  setDefaultSEO
-} from './utils/seo.js';
+
+// ======================================================
+// SEO
+// ======================================================
 
 import {
+
+  applyLoginSEO,
+
+  applyDashboardSEO,
+
+  applySessionsSEO,
+
+  applyResourcesSEO,
+
+  applyProfileSEO,
+
+  applyAdminSEO,
+
+  trackPageView,
+
+  setDefaultSEO
+
+} from './utils/seo.js';
+
+
+// ======================================================
+// MODULES
+// ======================================================
+
+import {
+
   initDashboard
+
 } from './modules/dashboard.js';
 
 import {
+
   initSessions
+
 } from './modules/sessions.js';
 
 import {
+
   initResources,
+
   initResourceSearch
+
 } from './modules/resources.js';
 
 import {
+
   initProfile
+
 } from './modules/profile.js';
 
 import {
+
   initAdminDashboard,
+
   initAdminUsers,
+
   initAdminSessions
+
 } from './modules/admin.js';
 
 
@@ -59,7 +121,9 @@ import {
 // ======================================================
 
 document.addEventListener(
+
   'DOMContentLoaded',
+
   async () => {
 
     await initApp();
@@ -83,13 +147,21 @@ async function initApp() {
 
     initSEO();
 
+    // UI
+
+    initGlobalUI();
+
+    // AUTH BUTTONS
+
+    initAuthButtons();
+
+    // AUTH SESSION
+
+    await handleInitialSession();
+
     // AUTH LISTENER
 
     initAuthListener();
-
-    // GLOBAL UI
-
-    initGlobalUI();
 
     // PRIVATE LAYOUT
 
@@ -114,6 +186,53 @@ async function initApp() {
 
 
 // ======================================================
+// INITIAL SESSION
+// ======================================================
+
+async function handleInitialSession() {
+
+  try {
+
+    const session =
+      await getSession();
+
+    const pathname =
+      window.location.pathname;
+
+    const isPublicPage =
+      pathname.includes('/public/');
+
+    const isAuthPage =
+
+      pathname.includes('login') ||
+
+      pathname.includes('register');
+
+    if (
+
+      session &&
+
+      isPublicPage &&
+
+      isAuthPage
+
+    ) {
+
+      window.location.href =
+        '/src/pages/app/dashboard.html';
+    }
+
+  } catch (error) {
+
+    console.error(
+      'Session initialization error:',
+      error
+    );
+  }
+}
+
+
+// ======================================================
 // SEO
 // ======================================================
 
@@ -129,35 +248,49 @@ function initSEO() {
     // PUBLIC
 
     case 'login':
+
       applyLoginSEO();
+
       break;
 
     // APP
 
     case 'dashboard':
+
       applyDashboardSEO();
+
       break;
 
     case 'sessions':
+
       applySessionsSEO();
+
       break;
 
     case 'resources':
+
       applyResourcesSEO();
+
       break;
 
     case 'profile':
+
       applyProfileSEO();
+
       break;
 
     // ADMIN
 
     case 'users':
+
     case 'announcements':
+
       applyAdminSEO();
+
       break;
 
     default:
+
       break;
   }
 
@@ -172,6 +305,7 @@ function initSEO() {
 function initAuthListener() {
 
   listenAuthChanges(
+
     async (event, session) => {
 
       console.info(
@@ -179,33 +313,50 @@ function initAuthListener() {
         event
       );
 
-      // SESSION EXPIRED
+      // SIGNED IN
+
+      if (
+
+        event === 'SIGNED_IN' &&
+
+        session
+
+      ) {
+
+        const isPublicPage =
+
+          window.location.pathname.includes(
+            '/public/'
+          );
+
+        if (isPublicPage) {
+
+          window.location.href =
+            '/src/pages/app/dashboard.html';
+        }
+      }
+
+      // SIGNED OUT
 
       if (
         event === 'SIGNED_OUT'
       ) {
 
-        const publicPage =
+        const isPrivatePage =
+
           window.location.pathname.includes(
-            '/public/'
+            '/app/'
+          ) ||
+
+          window.location.pathname.includes(
+            '/admin/'
           );
 
-        if (!publicPage) {
+        if (isPrivatePage) {
 
           window.location.href =
             '/src/pages/public/login.html';
         }
-      }
-
-      // SIGNED IN
-
-      if (
-        event === 'SIGNED_IN'
-      ) {
-
-        console.info(
-          'User authenticated'
-        );
       }
 
       // TOKEN REFRESH
@@ -215,7 +366,7 @@ function initAuthListener() {
       ) {
 
         console.info(
-          'Token refreshed'
+          'Session refreshed'
         );
       }
     }
@@ -242,6 +393,66 @@ function initGlobalUI() {
 
 
 // ======================================================
+// AUTH BUTTONS
+// ======================================================
+
+function initAuthButtons() {
+
+  const googleLoginButton =
+
+    document.querySelector(
+      '#google-login-button'
+    );
+
+  const googleRegisterButton =
+
+    document.querySelector(
+      '#google-register-button'
+    );
+
+  if (googleLoginButton) {
+
+    googleLoginButton.addEventListener(
+
+      'click',
+
+      async () => {
+
+        try {
+
+          await loginWithGoogle();
+
+        } catch (error) {
+
+          console.error(error);
+        }
+      }
+    );
+  }
+
+  if (googleRegisterButton) {
+
+    googleRegisterButton.addEventListener(
+
+      'click',
+
+      async () => {
+
+        try {
+
+          await loginWithGoogle();
+
+        } catch (error) {
+
+          console.error(error);
+        }
+      }
+    );
+  }
+}
+
+
+// ======================================================
 // LAYOUT
 // ======================================================
 
@@ -252,12 +463,13 @@ async function initLayout() {
 
   if (!session) return;
 
-  const isPublic =
+  const isPublicPage =
+
     window.location.pathname.includes(
       '/public/'
     );
 
-  if (isPublic) return;
+  if (isPublicPage) return;
 
   await renderPrivateLayout();
 }
@@ -339,6 +551,7 @@ async function loadPageModule() {
       break;
 
     default:
+
       break;
   }
 }
@@ -368,35 +581,30 @@ function initGoogleAnalytics() {
   if (!GA_ID) return;
 
   const script =
-    document.createElement('script');
+    document.createElement(
+      'script'
+    );
 
   script.async = true;
 
   script.src =
     `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`;
 
-  document.head.appendChild(
-    script
-  );
+  document.head.appendChild(script);
 
   window.dataLayer =
     window.dataLayer || [];
 
   function gtag() {
+
     dataLayer.push(arguments);
   }
 
   window.gtag = gtag;
 
-  gtag(
-    'js',
-    new Date()
-  );
+  gtag('js', new Date());
 
-  gtag(
-    'config',
-    GA_ID
-  );
+  gtag('config', GA_ID);
 }
 
 
@@ -411,24 +619,36 @@ function initClarity() {
 
   if (!clarityId) return;
 
-  (function(c,l,a,r,i,t,y){
+  (function (c, l, a, r, i, t, y) {
 
-    c[a] = c[a] || function(){
-      (c[a].q = c[a].q || []).push(arguments);
-    };
+    c[a] =
 
-    t = l.createElement(r);
+      c[a] ||
+
+      function () {
+
+        (c[a].q = c[a].q || [])
+          .push(arguments);
+      };
+
+    t =
+      l.createElement(r);
 
     t.async = 1;
 
     t.src =
       `https://www.clarity.ms/tag/${i}`;
 
-    y = l.getElementsByTagName(r)[0];
+    y =
+      l.getElementsByTagName(r)[0];
 
-    y.parentNode.insertBefore(t,y);
+    y.parentNode.insertBefore(
+      t,
+      y
+    );
 
   })(
+
     window,
     document,
     'clarity',
@@ -445,8 +665,10 @@ function initClarity() {
 function initKeyboardAccessibility() {
 
   document.addEventListener(
+
     'keydown',
-    event => {
+
+    (event) => {
 
       // ESC CLOSE MODALS
 
@@ -455,11 +677,13 @@ function initKeyboardAccessibility() {
       ) {
 
         const modal =
+
           document.querySelector(
             '.modal-overlay'
           );
 
         if (modal) {
+
           modal.remove();
         }
       }
@@ -475,14 +699,17 @@ function initKeyboardAccessibility() {
 function initExternalLinks() {
 
   const links =
+
     document.querySelectorAll(
       'a[target="_blank"]'
     );
 
-  links.forEach(link => {
+  links.forEach((link) => {
 
     link.setAttribute(
+
       'rel',
+
       'noopener noreferrer'
     );
   });
@@ -496,11 +723,12 @@ function initExternalLinks() {
 function initLazyLoading() {
 
   const images =
+
     document.querySelectorAll(
       'img'
     );
 
-  images.forEach(image => {
+  images.forEach((image) => {
 
     image.loading = 'lazy';
   });

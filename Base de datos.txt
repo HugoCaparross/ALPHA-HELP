@@ -1,343 +1,242 @@
--- ════════════════════════════════════════════════════════
---  ALPHA-HELP · Esquema mínimo y seguro
---  Supabase SQL Editor → ejecutar completo de una vez
--- ════════════════════════════════════════════════════════
+Resumen de la base de datos ALPHA-HELP
 
--- ── 1. TIPOS ─────────────────────────────────────────────
-DO $$ BEGIN
-  CREATE TYPE intervention_region AS ENUM ('ES', 'LATAM');
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+Tu base de datos está diseñada para una plataforma privada de:
 
--- ════════════════════════════════════════════════════════
---  TABLAS
--- ════════════════════════════════════════════════════════
+sesiones,
+grabaciones,
+recursos,
+cuestionarios,
+progreso usuario,
+administración.
 
--- ── 2. PROFILES ──────────────────────────────────────────
--- Una fila por usuario, vinculada a auth.users
-CREATE TABLE IF NOT EXISTS public.profiles (
-  id           UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  email        TEXT NOT NULL,
-  full_name    TEXT NOT NULL DEFAULT '',
-  is_admin     BOOLEAN NOT NULL DEFAULT FALSE,
-  region       intervention_region NOT NULL DEFAULT 'ES',
-  enrolled_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+Usa:
 
--- ── 3. SESSIONS ──────────────────────────────────────────
--- Sesiones del programa (máx. 9, una por mes)
-CREATE TABLE IF NOT EXISTS public.sessions (
-  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  region           intervention_region NOT NULL,
-  month_number     SMALLINT NOT NULL CHECK (month_number BETWEEN 1 AND 12),
-  title            TEXT NOT NULL,
-  description      TEXT NOT NULL DEFAULT '',
-  youtube_url      TEXT,                   -- URL del directo o grabación YT
-  live_at          TIMESTAMPTZ,            -- NULL = sin fecha programada
-  recording_url    TEXT,                   -- Disponible tras el directo
-  is_published     BOOLEAN NOT NULL DEFAULT FALSE,
-  created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE(region, month_number)
-);
+Supabase,
+PostgreSQL,
+RLS,
+auth.users.
+1. profiles
+Objetivo
 
--- ── 4. SESSION_RESOURCES ─────────────────────────────────
--- PDFs, guías, enlaces adjuntos a una sesión
-CREATE TABLE IF NOT EXISTS public.session_resources (
-  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  session_id   UUID NOT NULL REFERENCES public.sessions(id) ON DELETE CASCADE,
-  title        TEXT NOT NULL,
-  description  TEXT NOT NULL DEFAULT '',
-  type         TEXT NOT NULL DEFAULT 'pdf',   -- pdf | link | video
-  url          TEXT NOT NULL,
-  sort_order   SMALLINT NOT NULL DEFAULT 0,
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+Guardar información del usuario.
 
--- ── 5. USER_PROGRESS ─────────────────────────────────────
--- Qué sesiones ha visto / completado cada usuario
-CREATE TABLE IF NOT EXISTS public.user_progress (
-  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id      UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  session_id   UUID NOT NULL REFERENCES public.sessions(id) ON DELETE CASCADE,
-  watched      BOOLEAN NOT NULL DEFAULT FALSE,
-  completed    BOOLEAN NOT NULL DEFAULT FALSE,
-  completed_at TIMESTAMPTZ,
-  UNIQUE(user_id, session_id)
-);
+Relación
+1 perfil = 1 usuario auth
+Campos
+id UUID PK
+email TEXT
+full_name TEXT
+is_admin BOOLEAN
+region ENUM(ES | LATAM)
+enrolled_at TIMESTAMPTZ
+created_at TIMESTAMPTZ
+updated_at TIMESTAMPTZ
+Funciones
+roles admin,
+región usuario,
+permisos,
+perfil.
+2. sessions
+Objetivo
 
--- ── 6. ANNOUNCEMENTS ─────────────────────────────────────
--- Banners y avisos del dashboard, editables desde admin
-CREATE TABLE IF NOT EXISTS public.announcements (
-  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title        TEXT NOT NULL,
-  message      TEXT NOT NULL,
-  type         TEXT NOT NULL DEFAULT 'info',  -- info | warning | success
-  region       intervention_region,            -- NULL = visible para todos
-  is_active    BOOLEAN NOT NULL DEFAULT TRUE,
-  starts_at    TIMESTAMPTZ,
-  ends_at      TIMESTAMPTZ,
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+Sesiones del programa.
 
--- ════════════════════════════════════════════════════════
---  ÍNDICES
--- ════════════════════════════════════════════════════════
+Campos
+id UUID PK
+region ENUM
+month_number SMALLINT
+title TEXT
+description TEXT
+youtube_url TEXT
+live_at TIMESTAMPTZ
+recording_url TEXT
+is_published BOOLEAN
+created_at TIMESTAMPTZ
+updated_at TIMESTAMPTZ
+Funciones
+directos,
+grabaciones,
+desbloqueo progresivo,
+sesiones mensuales.
+3. session_resources
+Objetivo
 
-CREATE INDEX IF NOT EXISTS idx_sessions_region     ON public.sessions(region, is_published);
-CREATE INDEX IF NOT EXISTS idx_sessions_live       ON public.sessions(live_at) WHERE live_at IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_resources_session   ON public.session_resources(session_id);
-CREATE INDEX IF NOT EXISTS idx_progress_user       ON public.user_progress(user_id);
-CREATE INDEX IF NOT EXISTS idx_announcements_active ON public.announcements(is_active, region);
+Archivos y recursos de una sesión.
 
--- ════════════════════════════════════════════════════════
---  FUNCIONES AUXILIARES
--- ════════════════════════════════════════════════════════
+Relación
+1 sesión → muchos recursos
+Campos
+id UUID PK
+session_id UUID FK
+title TEXT
+description TEXT
+type TEXT
+url TEXT
+sort_order SMALLINT
+created_at TIMESTAMPTZ
+Tipos
+pdf
+video
+link
+4. user_progress
+Objetivo
 
--- Actualiza updated_at automáticamente
-CREATE OR REPLACE FUNCTION public.set_updated_at()
-RETURNS TRIGGER LANGUAGE plpgsql AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$;
+Guardar progreso del usuario.
 
--- Comprueba si el usuario actual es admin (evita recursión RLS)
-CREATE OR REPLACE FUNCTION public.is_admin()
-RETURNS BOOLEAN
-LANGUAGE sql STABLE SECURITY DEFINER
-SET search_path = public AS $$
-  SELECT COALESCE(
-    (SELECT is_admin FROM public.profiles WHERE id = auth.uid()),
-    FALSE
-  );
-$$;
+Relación
+usuario + sesión
+Campos
+id UUID PK
+user_id UUID FK
+session_id UUID FK
+watched BOOLEAN
+completed BOOLEAN
+completed_at TIMESTAMPTZ
+Funciones
+progreso,
+completadas,
+tracking usuario.
+5. announcements
+Objetivo
 
--- Crea perfil automáticamente al registrarse
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER
-LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = public AS $$
-DECLARE
-  v_region intervention_region;
-BEGIN
-  -- España si el país es ES, LATAM para cualquier otro
-  v_region := CASE
-    WHEN NEW.raw_user_meta_data->>'country' = 'ES' THEN 'ES'::intervention_region
-    ELSE 'LATAM'::intervention_region
-  END;
+Avisos del dashboard.
 
-  INSERT INTO public.profiles (id, email, full_name, region)
-  VALUES (
-    NEW.id,
-    NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'full_name', ''),
-    v_region
-  )
-  ON CONFLICT (id) DO NOTHING;
+Campos
+id UUID PK
+title TEXT
+message TEXT
+type TEXT
+region ENUM | NULL
+is_active BOOLEAN
+starts_at TIMESTAMPTZ
+ends_at TIMESTAMPTZ
+created_at TIMESTAMPTZ
+Tipos
+info
+warning
+success
+6. questionnaires
+Objetivo
 
-  RETURN NEW;
-END;
-$$;
+Cuestionarios.
 
--- Devuelve las sesiones disponibles para el usuario según fecha
--- Una sesión se desbloquea si live_at <= NOW() o si ya fue publicada
-CREATE OR REPLACE FUNCTION public.get_my_sessions()
-RETURNS TABLE (
-  id              UUID,
-  month_number    SMALLINT,
-  title           TEXT,
-  description     TEXT,
-  youtube_url     TEXT,
-  live_at         TIMESTAMPTZ,
-  recording_url   TEXT,
-  is_live_now     BOOLEAN,
-  status          TEXT   -- 'upcoming' | 'available' | 'completed'
+Campos
+id UUID PK
+title TEXT
+description TEXT
+is_active BOOLEAN
+created_at TIMESTAMPTZ
+7. questionnaire_questions
+Objetivo
+
+Preguntas de un cuestionario.
+
+Relación
+1 cuestionario → muchas preguntas
+Campos
+id UUID PK
+questionnaire_id UUID FK
+question TEXT
+sort_order SMALLINT
+created_at TIMESTAMPTZ
+8. questionnaire_answers
+Objetivo
+
+Respuestas usuario.
+
+Relación
+usuario + pregunta + cuestionario
+Campos
+id UUID PK
+user_id UUID FK
+questionnaire_id UUID FK
+question_id UUID FK
+likert_value SMALLINT
+created_at TIMESTAMPTZ
+Likert
+1-5
+
+Con constraint:
+
+CHECK (
+  likert_value >= 1
+  AND likert_value <= 5
 )
-LANGUAGE sql STABLE SECURITY DEFINER
-SET search_path = public AS $$
-  SELECT
-    s.id,
-    s.month_number,
-    s.title,
-    s.description,
-    s.youtube_url,
-    s.live_at,
-    s.recording_url,
-    -- En directo si live_at está en los últimos 90 min o próximas 24h
-    (s.live_at IS NOT NULL AND s.live_at BETWEEN NOW() - INTERVAL '90 minutes' AND NOW() + INTERVAL '24 hours') AS is_live_now,
-    CASE
-      WHEN up.completed = TRUE THEN 'completed'
-      WHEN s.live_at IS NULL OR s.live_at > NOW() + INTERVAL '24 hours' THEN 'upcoming'
-      ELSE 'available'
-    END AS status
-  FROM public.sessions s
-  LEFT JOIN public.user_progress up
-    ON up.session_id = s.id AND up.user_id = auth.uid()
-  WHERE s.region = (SELECT region FROM public.profiles WHERE id = auth.uid())
-    AND s.is_published = TRUE
-  ORDER BY s.month_number;
-$$;
+STORAGE
+Buckets
+resources
+privado
 
--- ════════════════════════════════════════════════════════
---  TRIGGERS
--- ════════════════════════════════════════════════════════
+Para:
 
--- Auto updated_at
-CREATE TRIGGER trg_profiles_updated_at
-  BEFORE UPDATE ON public.profiles
-  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+PDFs,
+recursos,
+materiales.
+avatars
+público
 
-CREATE TRIGGER trg_sessions_updated_at
-  BEFORE UPDATE ON public.sessions
-  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+Para:
 
--- Crear perfil al registrarse
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+foto perfil.
+SEGURIDAD
+RLS
 
--- ════════════════════════════════════════════════════════
---  ROW LEVEL SECURITY
--- ════════════════════════════════════════════════════════
+Todas las tablas tienen:
 
-ALTER TABLE public.profiles          ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.sessions          ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.session_resources ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.user_progress     ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.announcements     ENABLE ROW LEVEL SECURITY;
+ENABLE ROW LEVEL SECURITY
+auth.uid()
 
--- ── profiles ─────────────────────────────────────────────
-CREATE POLICY "profiles_own_read"
-  ON public.profiles FOR SELECT
-  USING (id = auth.uid() OR public.is_admin());
+Se usa para:
 
-CREATE POLICY "profiles_own_update"
-  ON public.profiles FOR UPDATE
-  USING (id = auth.uid())
-  WITH CHECK (
-    id = auth.uid()
-    AND is_admin = (SELECT is_admin FROM public.profiles WHERE id = auth.uid())
-  );
+proteger datos,
+limitar accesos,
+usuario solo ve lo suyo.
+Admin
 
--- Solo admin puede ver y modificar todos los perfiles
-CREATE POLICY "profiles_admin"
-  ON public.profiles FOR ALL
-  USING (public.is_admin());
+Función:
 
--- ── sessions ─────────────────────────────────────────────
--- Usuario solo ve sesiones de su región
-CREATE POLICY "sessions_user_read"
-  ON public.sessions FOR SELECT
-  USING (
-    is_published = TRUE
-    AND region = (SELECT region FROM public.profiles WHERE id = auth.uid())
-  );
+public.is_admin()
 
-CREATE POLICY "sessions_admin"
-  ON public.sessions FOR ALL
-  USING (public.is_admin());
+Permite:
 
--- ── session_resources ─────────────────────────────────────
--- Usuario ve recursos de sesiones de su región
-CREATE POLICY "resources_user_read"
-  ON public.session_resources FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.sessions s
-      WHERE s.id = session_id
-        AND s.is_published = TRUE
-        AND s.region = (SELECT region FROM public.profiles WHERE id = auth.uid())
-    )
-  );
+panel admin,
+editar sesiones,
+editar anuncios,
+ver usuarios.
+FUNCIONES IMPORTANTES
+handle_new_user()
 
-CREATE POLICY "resources_admin"
-  ON public.session_resources FOR ALL
-  USING (public.is_admin());
+Se ejecuta automáticamente al registrarse.
 
--- ── user_progress ─────────────────────────────────────────
-CREATE POLICY "progress_own_read"
-  ON public.user_progress FOR SELECT
-  USING (user_id = auth.uid() OR public.is_admin());
+Crea:
 
-CREATE POLICY "progress_own_write"
-  ON public.user_progress FOR INSERT
-  WITH CHECK (user_id = auth.uid());
+profiles
+get_my_sessions()
 
-CREATE POLICY "progress_own_update"
-  ON public.user_progress FOR UPDATE
-  USING (user_id = auth.uid())
-  WITH CHECK (user_id = auth.uid());
+Devuelve:
 
-CREATE POLICY "progress_admin"
-  ON public.user_progress FOR ALL
-  USING (public.is_admin());
+sesiones desbloqueadas
 
--- ── announcements ─────────────────────────────────────────
-CREATE POLICY "announcements_user_read"
-  ON public.announcements FOR SELECT
-  USING (
-    is_active = TRUE
-    AND (starts_at IS NULL OR starts_at <= NOW())
-    AND (ends_at   IS NULL OR ends_at   >= NOW())
-    AND (
-      region IS NULL
-      OR region = (SELECT region FROM public.profiles WHERE id = auth.uid())
-    )
-  );
+según:
 
-CREATE POLICY "announcements_admin"
-  ON public.announcements FOR ALL
-  USING (public.is_admin());
+región,
+fechas,
+progreso.
+ESTRUCTURA GENERAL
+auth.users
+   ↓
+profiles
+   ↓
+sessions
+   ↓
+resources
 
--- ════════════════════════════════════════════════════════
---  STORAGE
--- ════════════════════════════════════════════════════════
+users
+   ↓
+progress
 
-INSERT INTO storage.buckets (id, name, public) VALUES
-  ('resources', 'resources', FALSE),   -- PDFs y documentos privados
-  ('avatars',   'avatars',   TRUE)     -- Fotos de perfil (públicas)
-ON CONFLICT (id) DO NOTHING;
-
--- Solo usuarios autenticados pueden descargar recursos
-CREATE POLICY "resources_auth_download"
-  ON storage.objects FOR SELECT
-  USING (bucket_id = 'resources' AND auth.uid() IS NOT NULL);
-
--- Admin puede subir/borrar recursos
-CREATE POLICY "resources_admin_upload"
-  ON storage.objects FOR INSERT
-  WITH CHECK (bucket_id = 'resources' AND public.is_admin());
-
-CREATE POLICY "resources_admin_delete"
-  ON storage.objects FOR DELETE
-  USING (bucket_id = 'resources' AND public.is_admin());
-
--- Avatares: cualquier usuario autenticado puede subir el suyo
-CREATE POLICY "avatars_public_read"
-  ON storage.objects FOR SELECT
-  USING (bucket_id = 'avatars');
-
-CREATE POLICY "avatars_own_upload"
-  ON storage.objects FOR INSERT
-  WITH CHECK (
-    bucket_id = 'avatars'
-    AND auth.uid()::TEXT = (storage.foldername(name))[1]
-  );
-
--- ════════════════════════════════════════════════════════
---  DATOS INICIALES
--- ════════════════════════════════════════════════════════
-
--- Anuncio de bienvenida de ejemplo (editable desde admin)
-INSERT INTO public.announcements (title, message, type, region, is_active) VALUES
-  (
-    'Bienvenido/a al programa Alpha-Help',
-    'Aquí encontrarás todas tus sesiones, materiales y recursos. Cualquier duda, escríbenos desde el apartado de Contacto.',
-    'info',
-    NULL,   -- visible para España y LATAM
-    TRUE
-  )
-ON CONFLICT DO NOTHING;
+questionnaires
+   ↓
+questions
+   ↓
+answers

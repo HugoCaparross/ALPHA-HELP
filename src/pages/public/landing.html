@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>
+    ALPHA-HELP
+  </title>
+
+  <meta
+    name="description"
+    content="Plataforma privada de seguimiento y contenidos profesionales."
+  />
+
+  <link
+    rel="stylesheet"
+    href="/src/styles/base.css"
+  />
+
+  <link
+    rel="stylesheet"
+    href="/src/styles/landing.css"
+  />
+
+</head>
+
+<body>
+
+  <main class="landing">
+
+    <!-- BACKGROUND -->
+
+    <div class="landing-background"></div>
+
+    <!-- HERO -->
+
+    <section class="landing-hero">
+
+      <!-- LEFT -->
+
+      <div class="landing-left">
+
+        <img
+          src="/src/assets/images/logo.png"
+          alt="ALPHA-HELP"
+          class="landing-big-logo"
+        />
+
+      </div>
+
+      <!-- RIGHT -->
+
+      <div class="landing-right">
+
+        <div class="landing-content">
+
+          <span class="landing-badge">
+            Plataforma privada
+          </span>
+
+          <h1>
+            Tu espacio privado de seguimiento y crecimiento personal
+          </h1>
+
+          <p class="landing-description">
+            Accede a sesiones, contenidos profesionales y cuestionarios desde una plataforma clara, segura y diseñada para acompañarte en todo momento.
+          </p>
+
+          <!-- ACTIONS -->
+
+          <div class="landing-actions">
+
+            <a
+              href="/src/pages/public/login.html"
+              class="button"
+            >
+              Iniciar sesión
+            </a>
+
+            <a
+              href="/src/pages/public/register.html"
+              class="button button-secondary"
+            >
+              Registrarse
+            </a>
+
+          </div>
+
+          <!-- CONSENT -->
+
+          <div class="landing-consent">
+
+            <input
+              type="checkbox"
+              id="consent"
+            />
+
+            <label for="consent">
+
+              He leído y acepto los
+
+              <a
+                href="/src/pages/public/terms.html"
+                target="_blank"
+              >
+                Términos de uso
+              </a>
+
+              y la
+
+              <a
+                href="/src/pages/public/privacy.html"
+                target="_blank"
+              >
+                Política de privacidad
+              </a>
+
+            </label>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- FOOTER -->
+
+    <footer class="landing-footer">
+
+      <div class="landing-footer-left">
+
+        <a
+          href="/src/pages/public/privacy.html"
+        >
+          Privacidad
+        </a>
+
+        <a
+          href="/src/pages/public/cookies.html"
+        >
+          Cookies
+        </a>
+
+        <a
+          href="/src/pages/public/legal-notice.html"
+        >
+          Aviso legal
+        </a>
+
+        <a
+          href="/src/pages/public/terms.html"
+        >
+          Términos
+        </a>
+
+        <a href="#">
+          Ayuda
+        </a>
+
+      </div>
+
+      <p>
+        © 2026 ALPHA-HELP
+      </p>
+
+    </footer>
+
+  </main>
+
+  <script>
+
+    const consentCheckbox =
+      document.getElementById('consent')
+
+    const loginButton =
+      document.querySelector(
+        '.landing-actions a[href*="login"]'
+      )
+
+    const registerButton =
+      document.querySelector(
+        '.landing-actions a[href*="register"]'
+      )
+
+    function showConsentError() {
+
+      const existingError =
+        document.querySelector(
+          '.landing-consent-error'
+        )
+
+      if (existingError) return
+
+      const error =
+        document.createElement('div')
+
+      error.className =
+        'landing-consent-error'
+
+      error.textContent =
+        'Debes aceptar los términos y la política de privacidad para continuar.'
+
+      const consentBox =
+        document.querySelector(
+          '.landing-consent'
+        )
+
+      consentBox.after(error)
+
+      setTimeout(() => {
+
+        error.remove()
+
+      }, 3500)
+
+    }
+
+    function handleProtectedAccess(event) {
+
+      if (
+        consentCheckbox.checked
+      ) {
+        return
+      }
+
+      event.preventDefault()
+
+      showConsentError()
+
+    }
+
+    loginButton.addEventListener(
+      'click',
+      handleProtectedAccess
+    )
+
+    registerButton.addEventListener(
+      'click',
+      handleProtectedAccess
+    )
+
+  </script>
+
+</body>
+</html>
