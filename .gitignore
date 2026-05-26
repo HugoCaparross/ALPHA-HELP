@@ -78,7 +78,6 @@ Thumbs.db
 desktop.ini
 
 # Local Env Files (Mascara sensible)
-API de Google.txt
 .env
 .env.local
 .env.development.local

@@ -1,350 +1,561 @@
-import { supabase } from './supabase.js'
+import { supabase } from './supabase.js';
 
-// ─────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────
+import {
+  sanitizeFormData
+} from '../utils/validators.js';
 
-function sanitize(value = '') {
-  return value.trim()
-}
+import {
+  showToast
+} from '../components/ui.js';
 
-function sanitizeEmail(email = '') {
-  return email
-    .trim()
-    .toLowerCase()
-}
 
-function parseAuthError(error) {
+// ======================================================
+// CONSTANTS
+// ======================================================
 
-  const message =
-    error?.message || ''
+const LOGIN_REDIRECT =
+  '/src/pages/app/dashboard.html';
 
-  // Supabase auth errors
-  if (
-    message.includes('Invalid login')
-    || message.includes('invalid_credentials')
-  ) {
-    return 'Correo o contraseña incorrectos.'
-  }
+const PUBLIC_LOGIN =
+  '/src/pages/public/login.html';
 
-  if (
-    message.includes('Email not confirmed')
-  ) {
-    return 'Debes confirmar tu correo electrónico.'
-  }
 
-  if (
-    message.includes('User already registered')
-  ) {
-    return 'Ya existe una cuenta con este correo.'
-  }
-
-  if (
-    message.includes('Password should be')
-  ) {
-    return 'La contraseña no cumple los requisitos.'
-  }
-
-  if (
-    message.includes('network')
-    || message.includes('fetch')
-  ) {
-    return 'Error de conexión. Inténtalo de nuevo.'
-  }
-
-  return 'Ha ocurrido un error inesperado.'
-}
-
-// ─────────────────────────────────────
-// REGISTER
-// ─────────────────────────────────────
-
-export async function signUp({
-  full_name,
-  email,
-  password,
-  region
-}) {
-
-  const cleanName =
-    sanitize(full_name)
-
-  const cleanEmail =
-    sanitizeEmail(email)
-
-  // SQL enum exacto
-  const country =
-    region === 'ES'
-      ? 'ES'
-      : 'LATAM'
-
-  const {
-    data,
-    error
-  } = await supabase.auth.signUp({
-
-    email: cleanEmail,
-
-    password,
-
-    options: {
-
-      data: {
-        full_name: cleanName,
-        country
-      }
-
-    }
-
-  })
-
-  if (error) {
-    throw new Error(
-      parseAuthError(error)
-    )
-  }
-
-  return data
-}
-
-// ─────────────────────────────────────
+// ======================================================
 // LOGIN
-// ─────────────────────────────────────
+// ======================================================
 
-export async function signIn(
-  email,
-  password
-) {
+export async function login(data = {}) {
 
-  const cleanEmail =
-    sanitizeEmail(email)
+  try {
 
-  const cleanPassword =
-    sanitize(password)
+    const sanitized =
+      sanitizeFormData(data);
 
-  const {
-    data,
-    error
-  } = await supabase.auth.signInWithPassword({
+    const {
+      email,
+      password
+    } = sanitized;
 
-    email: cleanEmail,
-    password: cleanPassword
+    const {
+      data: authData,
+      error
+    } = await supabase.auth.signInWithPassword({
 
-  })
+      email,
+      password
+    });
 
-  if (error) {
-    throw new Error(
-      parseAuthError(error)
-    )
-  }
-
-  return data
-}
-
-// ─────────────────────────────────────
-// GOOGLE OAUTH
-// ─────────────────────────────────────
-
-export async function signInWithGoogle() {
-
-  const redirectTo =
-    `${window.location.origin}/src/pages/app/dashboard.html`
-
-  const {
-    data,
-    error
-  } = await supabase.auth.signInWithOAuth({
-
-    provider: 'google',
-
-    options: {
-      redirectTo
+    if (error) {
+      throw error;
     }
 
-  })
+    showToast(
+      'success',
+      'Sesión iniciada correctamente'
+    );
 
-  if (error) {
+    window.location.href =
+      LOGIN_REDIRECT;
+
+    return authData;
+
+  } catch (error) {
+
+    console.error(error);
+
     throw new Error(
-      parseAuthError(error)
-    )
+      getAuthErrorMessage(error)
+    );
   }
-
-  return data
 }
 
-// ─────────────────────────────────────
+
+// ======================================================
+// REGISTER
+// ======================================================
+
+export async function register(data = {}) {
+
+  try {
+
+    const sanitized =
+      sanitizeFormData(data);
+
+    const {
+      name,
+      surname,
+      email,
+      password,
+      country
+    } = sanitized;
+
+    const fullName =
+      `${name} ${surname}`;
+
+    const {
+      data: authData,
+      error
+    } = await supabase.auth.signUp({
+
+      email,
+
+      password,
+
+      options: {
+
+        emailRedirectTo:
+          `${window.location.origin}${PUBLIC_LOGIN}`,
+
+        data: {
+
+          full_name: fullName,
+
+          country
+        }
+      }
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    showToast(
+      'success',
+      'Revisa tu email para verificar tu cuenta'
+    );
+
+    return authData;
+
+  } catch (error) {
+
+    console.error(error);
+
+    throw new Error(
+      getAuthErrorMessage(error)
+    );
+  }
+}
+
+
+// ======================================================
+// GOOGLE AUTH
+// ======================================================
+
+export async function loginWithGoogle() {
+
+  try {
+
+    const {
+      error
+    } =
+    await supabase.auth.signInWithOAuth({
+
+      provider: 'google',
+
+      options: {
+
+        redirectTo:
+          `${window.location.origin}${LOGIN_REDIRECT}`,
+
+        queryParams: {
+
+          access_type: 'offline',
+
+          prompt: 'select_account'
+        }
+      }
+    });
+
+    if (error) {
+      throw error;
+    }
+
+  } catch (error) {
+
+    console.error(error);
+
+    showToast(
+      'error',
+      getAuthErrorMessage(error)
+    );
+  }
+}
+
+
+// ======================================================
 // LOGOUT
-// ─────────────────────────────────────
+// ======================================================
 
-export async function signOut() {
+export async function logout() {
 
-  const { error } =
-    await supabase.auth.signOut()
+  try {
 
-  if (error) {
-    throw new Error(
-      parseAuthError(error)
-    )
+    const {
+      error
+    } = await supabase.auth.signOut();
+
+    if (error) {
+      throw error;
+    }
+
+    localStorage.clear();
+
+    sessionStorage.clear();
+
+    window.location.href =
+      PUBLIC_LOGIN;
+
+  } catch (error) {
+
+    console.error(error);
+
+    showToast(
+      'error',
+      'No se pudo cerrar sesión'
+    );
   }
-
-  window.location.replace(
-    '/src/pages/public/login.html'
-  )
 }
 
-// ─────────────────────────────────────
-// PASSWORD RESET
-// ─────────────────────────────────────
 
-export async function resetPassword(
+// ======================================================
+// RECOVER PASSWORD
+// ======================================================
+
+export async function recoverPassword(
   email
 ) {
 
-  const cleanEmail =
-    sanitizeEmail(email)
+  try {
 
-  const {
-    error
-  } = await supabase.auth.resetPasswordForEmail(
+    const {
+      error
+    } =
+    await supabase.auth.resetPasswordForEmail(
+      email,
+      {
 
-    cleanEmail,
+        redirectTo:
+          `${window.location.origin}/src/pages/public/reset-password.html`
+      }
+    );
 
-    {
-      redirectTo:
-        `${window.location.origin}/src/pages/public/reset-password.html`
+    if (error) {
+      throw error;
     }
 
-  )
+    showToast(
+      'success',
+      'Te hemos enviado un email de recuperación'
+    );
 
-  if (error) {
+    return true;
+
+  } catch (error) {
+
+    console.error(error);
+
     throw new Error(
-      parseAuthError(error)
-    )
+      getAuthErrorMessage(error)
+    );
   }
-
-  return true
 }
 
-// ─────────────────────────────────────
+
+// ======================================================
 // UPDATE PASSWORD
-// ─────────────────────────────────────
+// ======================================================
 
 export async function updatePassword(
   password
 ) {
 
-  const {
-    data,
-    error
-  } = await supabase.auth.updateUser({
+  try {
 
-    password
+    const {
+      error
+    } = await supabase.auth.updateUser({
 
-  })
+      password
+    });
 
-  if (error) {
+    if (error) {
+      throw error;
+    }
+
+    showToast(
+      'success',
+      'Contraseña actualizada correctamente'
+    );
+
+    setTimeout(() => {
+
+      window.location.href =
+        PUBLIC_LOGIN;
+
+    }, 1200);
+
+    return true;
+
+  } catch (error) {
+
+    console.error(error);
+
     throw new Error(
-      parseAuthError(error)
-    )
+      getAuthErrorMessage(error)
+    );
   }
-
-  return data
 }
 
-// ─────────────────────────────────────
-// USER
-// ─────────────────────────────────────
 
-export async function getUser() {
+// ======================================================
+// GET USER
+// ======================================================
 
-  const {
-    data,
-    error
-  } = await supabase.auth.getUser()
+export async function getCurrentUser() {
 
-  if (error) {
+  try {
 
-    console.error(
-      '[GET_USER_ERROR]',
-      error.message
-    )
+    const {
+      data,
+      error
+    } = await supabase.auth.getUser();
 
-    return null
+    if (error) {
+      throw error;
+    }
+
+    return data.user;
+
+  } catch (error) {
+
+    console.error(error);
+
+    return null;
   }
-
-  return data?.user || null
 }
 
-// ─────────────────────────────────────
-// SESSION
-// ─────────────────────────────────────
+
+// ======================================================
+// GET SESSION
+// ======================================================
 
 export async function getSession() {
 
-  const {
-    data,
-    error
-  } = await supabase.auth.getSession()
+  try {
 
-  if (error) {
+    const {
+      data,
+      error
+    } = await supabase.auth.getSession();
 
-    console.error(
-      '[GET_SESSION_ERROR]',
-      error.message
-    )
+    if (error) {
+      throw error;
+    }
 
-    return null
+    return data.session;
+
+  } catch (error) {
+
+    console.error(error);
+
+    return null;
   }
-
-  return data?.session || null
 }
 
-// ─────────────────────────────────────
-// SESSION VALIDATION
-// ─────────────────────────────────────
+
+// ======================================================
+// REQUIRE AUTH
+// ======================================================
 
 export async function requireAuth() {
 
   const session =
-    await getSession()
+    await getSession();
 
   if (!session) {
 
-    window.location.replace(
-      '/src/pages/public/login.html'
-    )
+    window.location.href =
+      PUBLIC_LOGIN;
 
-    return null
+    return false;
   }
 
-  return session
+  return true;
 }
 
-// ─────────────────────────────────────
-// ADMIN CHECK
-// ─────────────────────────────────────
 
-export async function isAdmin() {
+// ======================================================
+// REQUIRE GUEST
+// ======================================================
 
-  const user =
-    await getUser()
+export async function requireGuest() {
 
-  if (!user) {
-    return false
+  const session =
+    await getSession();
+
+  if (session) {
+
+    window.location.href =
+      LOGIN_REDIRECT;
+
+    return false;
   }
 
-  const {
-    data,
-    error
-  } = await supabase
-    .from('profiles')
-    .select('is_admin')
-    .eq('id', user.id)
-    .single()
+  return true;
+}
 
-  if (error) {
-    return false
+
+// ======================================================
+// AUTH LISTENER
+// ======================================================
+
+export function listenAuthChanges(
+  callback
+) {
+
+  return supabase.auth.onAuthStateChange(
+
+    async (event, session) => {
+
+      callback(event, session);
+
+      if (
+        event === 'SIGNED_OUT'
+      ) {
+
+        localStorage.clear();
+
+        sessionStorage.clear();
+      }
+    }
+  );
+}
+
+
+// ======================================================
+// ERROR HANDLER
+// ======================================================
+
+function getAuthErrorMessage(error) {
+
+  const message =
+    error?.message?.toLowerCase() || '';
+
+  if (
+    message.includes(
+      'invalid login credentials'
+    )
+  ) {
+
+    return 'Email o contraseña incorrectos';
   }
 
-  return !!data?.is_admin
+  if (
+    message.includes(
+      'email not confirmed'
+    )
+  ) {
+
+    return 'Debes verificar tu email antes de iniciar sesión';
+  }
+
+  if (
+    message.includes(
+      'user already registered'
+    )
+  ) {
+
+    return 'Este email ya está registrado';
+  }
+
+  if (
+    message.includes(
+      'password'
+    )
+  ) {
+
+    return 'La contraseña no cumple los requisitos';
+  }
+
+  if (
+    message.includes(
+      'too many requests'
+    )
+  ) {
+
+    return 'Demasiados intentos. Inténtalo más tarde';
+  }
+
+  if (
+    message.includes(
+      'network'
+    )
+  ) {
+
+    return 'Error de conexión';
+  }
+
+  if (
+    message.includes(
+      'email'
+    )
+  ) {
+
+    return 'Error relacionado con el email';
+  }
+
+  return 'Ha ocurrido un error inesperado';
+}
+
+// ======================================================
+// REQUIRE ADMIN
+// ======================================================
+
+export async function requireAdmin() {
+
+  try {
+
+    const session =
+      await getSession();
+
+    if (!session) {
+
+      window.location.href =
+        '/src/pages/public/login.html';
+
+      return false;
+    }
+
+    const user =
+      session.user;
+
+    const role =
+      user?.user_metadata?.role ||
+
+      user?.app_metadata?.role ||
+
+      'user';
+
+    if (role !== 'admin') {
+
+      window.location.href =
+        '/src/pages/app/dashboard.html';
+
+      return false;
+    }
+
+    return true;
+
+  } catch (error) {
+
+    console.error(
+      'Admin guard error:',
+      error
+    );
+
+    window.location.href =
+      '/src/pages/public/login.html';
+
+    return false;
+  }
 }

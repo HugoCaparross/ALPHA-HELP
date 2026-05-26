@@ -1,301 +1,474 @@
-import {
-  signOut
-} from '../lib/auth.js'
+// src/components/layout.js
 
 import {
-  getUser,
-  isAdmin
-} from '../lib/auth.js'
+  getMyProfile
+} from '../lib/db.js';
 
-// ─────────────────────────────────────
-// SIDEBAR LINKS
-// ─────────────────────────────────────
+import {
+  logout
+} from '../lib/auth.js';
 
-const USER_LINKS = [
+import {
+  getCurrentPage
+} from '../lib/router.js';
 
-  {
-    label: 'Dashboard',
-    href: '/src/pages/app/dashboard.html'
-  },
 
-  {
-    label: 'Sesiones',
-    href: '/src/pages/app/sessions.html'
-  },
+// ======================================================
+// PRIVATE LAYOUT
+// ======================================================
 
-  {
-    label: 'Recursos',
-    href: '/src/pages/app/resources.html'
-  },
+export async function renderPrivateLayout() {
 
-  {
-    label: 'FAQ',
-    href: '/src/pages/app/faq.html'
-  },
+  const profile =
+    await getMyProfile();
 
-  {
-    label: 'Contacto',
-    href: '/src/pages/app/contact.html'
-  },
+  renderSidebar(profile);
 
-  {
-    label: 'Perfil',
-    href: '/src/pages/app/profile.html'
-  }
+  renderTopbar(profile);
 
-]
+  renderFooter();
 
-const ADMIN_LINKS = [
+  setActiveNavigation();
+}
 
-  {
-    label: 'Admin',
-    href: '/src/pages/admin/dashboard.html'
-  },
 
-  {
-    label: 'Usuarios',
-    href: '/src/pages/admin/users.html'
-  },
+// ======================================================
+// SIDEBAR
+// ======================================================
 
-  {
-    label: 'Sesiones',
-    href: '/src/pages/admin/sessions.html'
-  },
+function renderSidebar(profile) {
 
-  {
-    label: 'Avisos',
-    href: '/src/pages/admin/announcements.html'
-  }
+  const sidebar =
+    document.querySelector(
+      '#sidebar'
+    );
 
-]
+  if (!sidebar) return;
 
-// ─────────────────────────────────────
-// MAIN LAYOUT
-// ─────────────────────────────────────
+  sidebar.innerHTML = `
+    <aside class="sidebar">
 
-export async function renderLayout(
-  containerId = 'app'
-) {
+      <div class="sidebar-header">
 
-  const container =
-    document.getElementById(
-      containerId
-    )
-
-  if (!container) return
-
-  const user =
-    await getUser()
-
-  if (!user) return
-
-  const admin =
-    await isAdmin()
-
-  const links = [
-
-    ...USER_LINKS,
-
-    ...(admin ? ADMIN_LINKS : [])
-
-  ]
-
-  container.innerHTML = `
-
-    <div class="app-layout">
-
-      <!-- SIDEBAR -->
-
-      <aside class="sidebar">
-
-        <div class="sidebar-brand">
-
+        <a
+          href="/src/pages/app/dashboard.html"
+          class="sidebar-logo"
+        >
           <img
             src="/src/assets/images/logo.svg"
             alt="ALPHA-HELP"
-            class="sidebar-logo"
-          />
-
-          <span>
-            ALPHA-HELP
-          </span>
-
-        </div>
-
-        <nav class="sidebar-nav">
-
-          ${links.map(link => `
-
-            <a
-              href="${link.href}"
-              class="sidebar-link ${
-                window.location.pathname === link.href
-                  ? 'active'
-                  : ''
-              }"
-            >
-
-              ${link.label}
-
-            </a>
-
-          `).join('')}
-
-        </nav>
-
-        <div class="sidebar-footer">
-
-          <button
-            id="logout-button"
-            class="button button-secondary"
           >
-            Cerrar sesión
-          </button>
+        </a>
 
-        </div>
+      </div>
 
-      </aside>
+      <nav class="sidebar-nav">
 
-      <!-- CONTENT -->
+        ${renderNavLinks(profile)}
 
-      <main class="app-content">
+      </nav>
 
-        <header class="app-header">
+      <div class="sidebar-footer">
 
-          <div>
+        <div class="sidebar-user">
 
-            <h1 class="app-page-title">
-
-              ${getPageTitle()}
-
-            </h1>
-
-            <p class="app-page-subtitle">
-
-              Plataforma privada ALPHA-HELP
-
-            </p>
-
+          <div class="sidebar-user-avatar">
+            ${getInitials(profile.full_name)}
           </div>
 
-          <div class="app-user">
+          <div class="sidebar-user-info">
 
-            <span class="app-user-name">
+            <span class="sidebar-user-name">
+              ${profile.full_name}
+            </span>
 
-              ${
-                user.user_metadata
-                  ?.full_name || 'Usuario'
-              }
-
+            <span class="sidebar-user-region">
+              ${profile.region}
             </span>
 
           </div>
 
-        </header>
+        </div>
 
-        <section id="page-content">
+      </div>
 
-        </section>
-
-      </main>
-
-    </div>
-
-  `
-
-  initLayoutEvents()
-
+    </aside>
+  `;
 }
 
-// ─────────────────────────────────────
-// EVENTS
-// ─────────────────────────────────────
 
-function initLayoutEvents() {
+// ======================================================
+// NAV LINKS
+// ======================================================
 
-  const logoutBtn =
+function renderNavLinks(profile) {
+
+  const links = [
+
+    {
+      label: 'Dashboard',
+      icon: '🏠',
+      href:
+        '/src/pages/app/dashboard.html',
+      page: 'dashboard'
+    },
+
+    {
+      label: 'Sesiones',
+      icon: '🎥',
+      href:
+        '/src/pages/app/sessions.html',
+      page: 'sessions'
+    },
+
+    {
+      label: 'Recursos',
+      icon: '📚',
+      href:
+        '/src/pages/app/resources.html',
+      page: 'resources'
+    },
+
+    {
+      label: 'FAQ',
+      icon: '❓',
+      href:
+        '/src/pages/app/faq.html',
+      page: 'faq'
+    },
+
+    {
+      label: 'Contacto',
+      icon: '✉️',
+      href:
+        '/src/pages/app/contact.html',
+      page: 'contact'
+    },
+
+    {
+      label: 'Perfil',
+      icon: '👤',
+      href:
+        '/src/pages/app/profile.html',
+      page: 'profile'
+    }
+  ];
+
+  // ADMIN
+
+  if (profile.is_admin) {
+
+    links.push({
+
+      label: 'Administración',
+
+      icon: '⚙️',
+
+      href:
+        '/src/pages/admin/dashboard.html',
+
+      page: 'admin'
+    });
+  }
+
+  return links.map(link => `
+
+    <a
+      href="${link.href}"
+      class="sidebar-link"
+      data-nav-link="${link.page}"
+    >
+
+      <span class="sidebar-link-icon">
+        ${link.icon}
+      </span>
+
+      <span class="sidebar-link-label">
+        ${link.label}
+      </span>
+
+    </a>
+
+  `).join('');
+}
+
+
+// ======================================================
+// TOPBAR
+// ======================================================
+
+function renderTopbar(profile) {
+
+  const topbar =
+    document.querySelector(
+      '#topbar'
+    );
+
+  if (!topbar) return;
+
+  topbar.innerHTML = `
+    <header class="topbar">
+
+      <div class="topbar-left">
+
+        <button
+          class="mobile-menu-button"
+          id="mobile-menu-button"
+        >
+          ☰
+        </button>
+
+        <div class="breadcrumbs">
+
+          <span class="breadcrumbs-page">
+            ${formatPageName()}
+          </span>
+
+        </div>
+
+      </div>
+
+      <div class="topbar-right">
+
+        <div
+          class="topbar-profile"
+          data-dropdown
+        >
+
+          <button
+            class="topbar-profile-trigger"
+            data-dropdown-trigger
+          >
+
+            <div class="topbar-avatar">
+              ${getInitials(profile.full_name)}
+            </div>
+
+            <span class="topbar-name">
+              ${profile.full_name}
+            </span>
+
+          </button>
+
+          <div
+            class="topbar-dropdown"
+            data-dropdown-menu
+          >
+
+            <a
+              href="/src/pages/app/profile.html"
+              class="topbar-dropdown-link"
+            >
+              Perfil
+            </a>
+
+            <button
+              class="topbar-dropdown-link logout-button"
+              id="logout-button"
+            >
+              Cerrar sesión
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </header>
+  `;
+
+  initLogout();
+
+  initMobileSidebar();
+}
+
+
+// ======================================================
+// FOOTER
+// ======================================================
+
+function renderFooter() {
+
+  const footer =
+    document.querySelector(
+      '#footer'
+    );
+
+  if (!footer) return;
+
+  footer.innerHTML = `
+    <footer class="footer">
+
+      <div class="footer-content">
+
+        <p class="footer-copy">
+          © ${new Date().getFullYear()}
+          ALPHA-HELP.
+          Todos los derechos reservados.
+        </p>
+
+        <div class="footer-links">
+
+          <a
+            href="/src/pages/public/privacy.html"
+          >
+            Privacidad
+          </a>
+
+          <a
+            href="/src/pages/public/cookies.html"
+          >
+            Cookies
+          </a>
+
+          <a
+            href="/src/pages/public/legal-notice.html"
+          >
+            Aviso legal
+          </a>
+
+          <a
+            href="/src/pages/public/terms.html"
+          >
+            Términos
+          </a>
+
+        </div>
+
+      </div>
+
+    </footer>
+  `;
+}
+
+
+// ======================================================
+// ACTIVE NAVIGATION
+// ======================================================
+
+function setActiveNavigation() {
+
+  const currentPage =
+    getCurrentPage();
+
+  const links =
+    document.querySelectorAll(
+      '[data-nav-link]'
+    );
+
+  links.forEach(link => {
+
+    const page =
+      link.dataset.navLink;
+
+    if (
+      currentPage.includes(page)
+    ) {
+
+      link.classList.add('active');
+
+    } else {
+
+      link.classList.remove('active');
+    }
+  });
+}
+
+
+// ======================================================
+// LOGOUT
+// ======================================================
+
+function initLogout() {
+
+  const logoutButton =
     document.getElementById(
       'logout-button'
-    )
+    );
 
-  if (!logoutBtn) return
+  if (!logoutButton) return;
 
-  logoutBtn.addEventListener(
+  logoutButton.addEventListener(
     'click',
     async () => {
 
-      try {
-
-        logoutBtn.disabled = true
-
-        await signOut()
-
-      } catch (error) {
-
-        console.error(
-          '[LOGOUT_ERROR]',
-          error
-        )
-
-        logoutBtn.disabled = false
-
-      }
-
+      await logout();
     }
-  )
-
+  );
 }
 
-// ─────────────────────────────────────
-// PAGE TITLE
-// ─────────────────────────────────────
 
-function getPageTitle() {
+// ======================================================
+// MOBILE SIDEBAR
+// ======================================================
 
-  const path =
-    window.location.pathname
+function initMobileSidebar() {
 
-  if (
-    path.includes('dashboard')
-  ) {
-    return 'Dashboard'
-  }
+  const button =
+    document.getElementById(
+      'mobile-menu-button'
+    );
 
-  if (
-    path.includes('sessions')
-  ) {
-    return 'Sesiones'
-  }
+  const sidebar =
+    document.querySelector(
+      '.sidebar'
+    );
 
-  if (
-    path.includes('resources')
-  ) {
-    return 'Recursos'
-  }
+  if (!button || !sidebar) return;
 
-  if (
-    path.includes('faq')
-  ) {
-    return 'Preguntas frecuentes'
-  }
+  button.addEventListener(
+    'click',
+    () => {
 
-  if (
-    path.includes('contact')
-  ) {
-    return 'Contacto'
-  }
+      sidebar.classList.toggle(
+        'sidebar-open'
+      );
+    }
+  );
+}
 
-  if (
-    path.includes('profile')
-  ) {
-    return 'Perfil'
-  }
 
-  if (
-    path.includes('/admin/')
-  ) {
-    return 'Administración'
-  }
+// ======================================================
+// HELPERS
+// ======================================================
 
-  return 'ALPHA-HELP'
+function getInitials(name = '') {
+
+  return name
+    .split(' ')
+    .map(word => word[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+
+function formatPageName() {
+
+  const page =
+    getCurrentPage();
+
+  if (!page) return 'Dashboard';
+
+  const names = {
+
+    dashboard: 'Dashboard',
+
+    sessions: 'Sesiones',
+
+    resources: 'Recursos',
+
+    faq: 'FAQ',
+
+    contact: 'Contacto',
+
+    profile: 'Perfil',
+
+    users: 'Usuarios',
+
+    announcements: 'Avisos'
+  };
+
+  return names[page] || 'ALPHA-HELP';
 }

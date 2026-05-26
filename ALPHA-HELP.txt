@@ -1,0 +1,95 @@
+ALPHA-HELP/
+│
+├── public/
+│   ├── favicon.ico
+│   ├── og-image.jpg
+│   ├── robots.txt
+│   └── sitemap.xml
+│
+├── src/
+│   │
+│   ├── main.js
+│   │
+│   ├── assets/
+│   │   ├── images/
+│   │   │   └── logo.svg
+│   │   └── icons/
+│   │
+│   ├── styles/
+│   │   ├── base.css
+│   │   ├── components.css
+│   │   ├── auth.css
+│   │   ├── dashboard.css
+│   │   ├── sessions.css
+│   │   ├── questionnaires.css     ← NUEVO
+│   │   ├── landing.css            ← NUEVO
+│   │   ├── admin.css
+│   │   └── legal.css
+│   │
+│   ├── pages/
+│   │   │
+│   │   ├── public/
+│   │   │   ├── landing.html       ← NUEVO
+│   │   │   ├── login.html
+│   │   │   ├── register.html
+│   │   │   ├── forgot-password.html
+│   │   │   ├── reset-password.html
+│   │   │   ├── privacy.html
+│   │   │   ├── cookies.html
+│   │   │   ├── legal-notice.html
+│   │   │   ├── terms.html
+│   │   │   └── 404.html
+│   │   │
+│   │   ├── app/
+│   │   │   ├── dashboard.html
+│   │   │   ├── sessions.html
+│   │   │   ├── questionnaires.html ← NUEVO
+│   │   │   ├── resources.html
+│   │   │   ├── faq.html
+│   │   │   ├── contact.html
+│   │   │   └── profile.html
+│   │   │
+│   │   └── admin/
+│   │       ├── dashboard.html
+│   │       ├── users.html
+│   │       ├── sessions.html
+│   │       ├── questionnaires.html ← NUEVO
+│   │       └── announcements.html
+│   │
+│   ├── components/
+│   │   ├── layout.js
+│   │   ├── ui.js
+│   │   └── forms.js
+│   │
+│   ├── lib/
+│   │   ├── supabase.js
+│   │   ├── auth.js
+│   │   ├── db.js
+│   │   └── router.js
+│   │
+│   ├── modules/
+│   │   ├── dashboard.js
+│   │   ├── sessions.js
+│   │   ├── questionnaires.js      ← NUEVO
+│   │   ├── resources.js
+│   │   ├── profile.js
+│   │   └── admin.js
+│   │
+│   └── utils/
+│       ├── validators.js
+│       ├── helpers.js
+│       ├── constants.js
+│       └── seo.js
+│
+├── supabase/
+│   └── schema.sql
+│
+├── index.html                     ← NUEVO
+│
+├── .env
+├── .env.example
+├── .gitignore
+├── package.json
+├── vite.config.js
+├── vercel.json
+└── README.md

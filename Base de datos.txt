@@ -1,0 +1,242 @@
+Resumen de la base de datos ALPHA-HELP
+
+Tu base de datos está diseñada para una plataforma privada de:
+
+sesiones,
+grabaciones,
+recursos,
+cuestionarios,
+progreso usuario,
+administración.
+
+Usa:
+
+Supabase,
+PostgreSQL,
+RLS,
+auth.users.
+1. profiles
+Objetivo
+
+Guardar información del usuario.
+
+Relación
+1 perfil = 1 usuario auth
+Campos
+id UUID PK
+email TEXT
+full_name TEXT
+is_admin BOOLEAN
+region ENUM(ES | LATAM)
+enrolled_at TIMESTAMPTZ
+created_at TIMESTAMPTZ
+updated_at TIMESTAMPTZ
+Funciones
+roles admin,
+región usuario,
+permisos,
+perfil.
+2. sessions
+Objetivo
+
+Sesiones del programa.
+
+Campos
+id UUID PK
+region ENUM
+month_number SMALLINT
+title TEXT
+description TEXT
+youtube_url TEXT
+live_at TIMESTAMPTZ
+recording_url TEXT
+is_published BOOLEAN
+created_at TIMESTAMPTZ
+updated_at TIMESTAMPTZ
+Funciones
+directos,
+grabaciones,
+desbloqueo progresivo,
+sesiones mensuales.
+3. session_resources
+Objetivo
+
+Archivos y recursos de una sesión.
+
+Relación
+1 sesión → muchos recursos
+Campos
+id UUID PK
+session_id UUID FK
+title TEXT
+description TEXT
+type TEXT
+url TEXT
+sort_order SMALLINT
+created_at TIMESTAMPTZ
+Tipos
+pdf
+video
+link
+4. user_progress
+Objetivo
+
+Guardar progreso del usuario.
+
+Relación
+usuario + sesión
+Campos
+id UUID PK
+user_id UUID FK
+session_id UUID FK
+watched BOOLEAN
+completed BOOLEAN
+completed_at TIMESTAMPTZ
+Funciones
+progreso,
+completadas,
+tracking usuario.
+5. announcements
+Objetivo
+
+Avisos del dashboard.
+
+Campos
+id UUID PK
+title TEXT
+message TEXT
+type TEXT
+region ENUM | NULL
+is_active BOOLEAN
+starts_at TIMESTAMPTZ
+ends_at TIMESTAMPTZ
+created_at TIMESTAMPTZ
+Tipos
+info
+warning
+success
+6. questionnaires
+Objetivo
+
+Cuestionarios.
+
+Campos
+id UUID PK
+title TEXT
+description TEXT
+is_active BOOLEAN
+created_at TIMESTAMPTZ
+7. questionnaire_questions
+Objetivo
+
+Preguntas de un cuestionario.
+
+Relación
+1 cuestionario → muchas preguntas
+Campos
+id UUID PK
+questionnaire_id UUID FK
+question TEXT
+sort_order SMALLINT
+created_at TIMESTAMPTZ
+8. questionnaire_answers
+Objetivo
+
+Respuestas usuario.
+
+Relación
+usuario + pregunta + cuestionario
+Campos
+id UUID PK
+user_id UUID FK
+questionnaire_id UUID FK
+question_id UUID FK
+likert_value SMALLINT
+created_at TIMESTAMPTZ
+Likert
+1-5
+
+Con constraint:
+
+CHECK (
+  likert_value >= 1
+  AND likert_value <= 5
+)
+STORAGE
+Buckets
+resources
+privado
+
+Para:
+
+PDFs,
+recursos,
+materiales.
+avatars
+público
+
+Para:
+
+foto perfil.
+SEGURIDAD
+RLS
+
+Todas las tablas tienen:
+
+ENABLE ROW LEVEL SECURITY
+auth.uid()
+
+Se usa para:
+
+proteger datos,
+limitar accesos,
+usuario solo ve lo suyo.
+Admin
+
+Función:
+
+public.is_admin()
+
+Permite:
+
+panel admin,
+editar sesiones,
+editar anuncios,
+ver usuarios.
+FUNCIONES IMPORTANTES
+handle_new_user()
+
+Se ejecuta automáticamente al registrarse.
+
+Crea:
+
+profiles
+get_my_sessions()
+
+Devuelve:
+
+sesiones desbloqueadas
+
+según:
+
+región,
+fechas,
+progreso.
+ESTRUCTURA GENERAL
+auth.users
+   ↓
+profiles
+   ↓
+sessions
+   ↓
+resources
+
+users
+   ↓
+progress
+
+questionnaires
+   ↓
+questions
+   ↓
+answers

@@ -1,193 +1,735 @@
-import {
-  initGuard
-} from './lib/router.js'
+// ======================================================
+// ROUTER
+// ======================================================
 
 import {
-  renderLayout
-} from './components/layout.js'
+
+  initRouter,
+
+  getCurrentPage
+
+} from './lib/router.js';
+
+
+// ======================================================
+// AUTH
+// ======================================================
 
 import {
-  loadDashboard
-} from './modules/dashboard.js'
+
+  listenAuthChanges,
+
+  getSession,
+
+  loginWithGoogle
+
+} from './lib/auth.js';
+
+
+// ======================================================
+// LAYOUT
+// ======================================================
 
 import {
-  loadSessions
-} from './modules/sessions.js'
+
+  renderPrivateLayout
+
+} from './components/layout.js';
+
+
+// ======================================================
+// UI
+// ======================================================
 
 import {
-  loadProfile
-} from './modules/profile.js'
+
+  initDropdowns,
+
+  initAccordions
+
+} from './components/ui.js';
+
+
+// ======================================================
+// SEO
+// ======================================================
 
 import {
-  applySEO
-} from './utils/seo.js'
 
-// ─────────────────────────────────────
-// INIT
-// ─────────────────────────────────────
+  applyLoginSEO,
+
+  applyDashboardSEO,
+
+  applySessionsSEO,
+
+  applyResourcesSEO,
+
+  applyProfileSEO,
+
+  applyAdminSEO,
+
+  trackPageView,
+
+  setDefaultSEO
+
+} from './utils/seo.js';
+
+
+// ======================================================
+// MODULES
+// ======================================================
+
+import {
+
+  initDashboard
+
+} from './modules/dashboard.js';
+
+import {
+
+  initSessions
+
+} from './modules/sessions.js';
+
+import {
+
+  initResources,
+
+  initResourceSearch
+
+} from './modules/resources.js';
+
+import {
+
+  initProfile
+
+} from './modules/profile.js';
+
+import {
+
+  initAdminDashboard,
+
+  initAdminUsers,
+
+  initAdminSessions
+
+} from './modules/admin.js';
+
+
+// ======================================================
+// APP INIT
+// ======================================================
 
 document.addEventListener(
+
   'DOMContentLoaded',
+
   async () => {
 
-    try {
+    await initApp();
+  }
+);
 
-      applySEO()
 
-      const session =
-        await initGuard()
+// ======================================================
+// INIT APP
+// ======================================================
 
-      if (!session) return
+async function initApp() {
 
-      // PUBLIC PAGES
-      const isPublic =
-        window.location.pathname.includes(
-          '/public/'
-        )
+  try {
 
-      if (isPublic) return
+    // ROUTER
 
-      // APP LAYOUT
-      await renderLayout()
+    await initRouter();
 
-      const pageContent =
-        document.getElementById(
-          'page-content'
-        )
+    // SEO
 
-      if (!pageContent) return
+    initSEO();
 
-      const path =
-        window.location.pathname
+    // UI
 
-      // ─────────────────────────────
-      // DASHBOARD
-      // ─────────────────────────────
+    initGlobalUI();
 
-      if (
-        path.includes(
-          '/dashboard.html'
-        )
-      ) {
+    // AUTH BUTTONS
 
-        pageContent.innerHTML = `
+    initAuthButtons();
 
-          <div
-            class="dashboard-grid"
-          >
+    // AUTH SESSION
 
-            <section
-              id="dashboard-welcome"
-            ></section>
+    await handleInitialSession();
 
-            <section
-              id="dashboard-announcements"
-            ></section>
+    // AUTH LISTENER
 
-            <section
-              id="dashboard-next-session"
-            ></section>
+    initAuthListener();
 
-            <section
-              id="dashboard-stats"
-            ></section>
+    // PRIVATE LAYOUT
 
-          </div>
+    await initLayout();
 
-        `
+    // PAGE MODULES
 
-        await loadDashboard()
+    await loadPageModule();
 
-      }
+    // ANALYTICS
 
-      // ─────────────────────────────
-      // SESSIONS
-      // ─────────────────────────────
+    initAnalytics();
 
-      if (
-        path.includes(
-          '/sessions.html'
-        )
-      ) {
+  } catch (error) {
 
-        pageContent.innerHTML = `
+    console.error(
+      'App initialization error:',
+      error
+    );
+  }
+}
 
-          <div
-            id="sessions-grid"
-            class="sessions-grid"
-          ></div>
 
-        `
+// ======================================================
+// INITIAL SESSION
+// ======================================================
 
-        await loadSessions()
+async function handleInitialSession() {
 
-      }
+  try {
 
-      // ─────────────────────────────
-      // PROFILE
-      // ─────────────────────────────
+    const session =
+      await getSession();
 
-      if (
-        path.includes(
-          '/profile.html'
-        )
-      ) {
+    const pathname =
+      window.location.pathname;
 
-        pageContent.innerHTML = `
+    const isPublicPage =
+      pathname.includes('/public/');
 
-          <div
-            id="profile-container"
-          ></div>
+    const isAuthPage =
 
-        `
+      pathname.includes('login') ||
 
-        await loadProfile(
-          document.getElementById(
-            'profile-container'
-          )
-        )
+      pathname.includes('register');
 
-      }
+    if (
 
-    } catch (error) {
+      session &&
 
-      console.error(
-        '[APP_INIT_ERROR]',
-        error
-      )
+      isPublicPage &&
 
-      document.body.innerHTML = `
+      isAuthPage
 
-        <main
-          style="
-            min-height:100vh;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            padding:2rem;
-          "
-        >
+    ) {
 
-          <div
-            class="card empty-state"
-            style="max-width:500px;width:100%;"
-          >
-
-            <h2>
-              Error al cargar la aplicación
-            </h2>
-
-            <p>
-              Ha ocurrido un problema inesperado.
-            </p>
-
-          </div>
-
-        </main>
-
-      `
-
+      window.location.href =
+        '/src/pages/app/dashboard.html';
     }
 
+  } catch (error) {
+
+    console.error(
+      'Session initialization error:',
+      error
+    );
   }
-)
+}
+
+
+// ======================================================
+// SEO
+// ======================================================
+
+function initSEO() {
+
+  const page =
+    getCurrentPage();
+
+  setDefaultSEO();
+
+  switch (page) {
+
+    // PUBLIC
+
+    case 'login':
+
+      applyLoginSEO();
+
+      break;
+
+    // APP
+
+    case 'dashboard':
+
+      applyDashboardSEO();
+
+      break;
+
+    case 'sessions':
+
+      applySessionsSEO();
+
+      break;
+
+    case 'resources':
+
+      applyResourcesSEO();
+
+      break;
+
+    case 'profile':
+
+      applyProfileSEO();
+
+      break;
+
+    // ADMIN
+
+    case 'users':
+
+    case 'announcements':
+
+      applyAdminSEO();
+
+      break;
+
+    default:
+
+      break;
+  }
+
+  trackPageView(page);
+}
+
+
+// ======================================================
+// AUTH LISTENER
+// ======================================================
+
+function initAuthListener() {
+
+  listenAuthChanges(
+
+    async (event, session) => {
+
+      console.info(
+        'Auth event:',
+        event
+      );
+
+      // SIGNED IN
+
+      if (
+
+        event === 'SIGNED_IN' &&
+
+        session
+
+      ) {
+
+        const isPublicPage =
+
+          window.location.pathname.includes(
+            '/public/'
+          );
+
+        if (isPublicPage) {
+
+          window.location.href =
+            '/src/pages/app/dashboard.html';
+        }
+      }
+
+      // SIGNED OUT
+
+      if (
+        event === 'SIGNED_OUT'
+      ) {
+
+        const isPrivatePage =
+
+          window.location.pathname.includes(
+            '/app/'
+          ) ||
+
+          window.location.pathname.includes(
+            '/admin/'
+          );
+
+        if (isPrivatePage) {
+
+          window.location.href =
+            '/src/pages/public/login.html';
+        }
+      }
+
+      // TOKEN REFRESH
+
+      if (
+        event === 'TOKEN_REFRESHED'
+      ) {
+
+        console.info(
+          'Session refreshed'
+        );
+      }
+    }
+  );
+}
+
+
+// ======================================================
+// GLOBAL UI
+// ======================================================
+
+function initGlobalUI() {
+
+  initDropdowns();
+
+  initAccordions();
+
+  initKeyboardAccessibility();
+
+  initExternalLinks();
+
+  initLazyLoading();
+}
+
+
+// ======================================================
+// AUTH BUTTONS
+// ======================================================
+
+function initAuthButtons() {
+
+  const googleLoginButton =
+
+    document.querySelector(
+      '#google-login-button'
+    );
+
+  const googleRegisterButton =
+
+    document.querySelector(
+      '#google-register-button'
+    );
+
+  if (googleLoginButton) {
+
+    googleLoginButton.addEventListener(
+
+      'click',
+
+      async () => {
+
+        try {
+
+          await loginWithGoogle();
+
+        } catch (error) {
+
+          console.error(error);
+        }
+      }
+    );
+  }
+
+  if (googleRegisterButton) {
+
+    googleRegisterButton.addEventListener(
+
+      'click',
+
+      async () => {
+
+        try {
+
+          await loginWithGoogle();
+
+        } catch (error) {
+
+          console.error(error);
+        }
+      }
+    );
+  }
+}
+
+
+// ======================================================
+// LAYOUT
+// ======================================================
+
+async function initLayout() {
+
+  const session =
+    await getSession();
+
+  if (!session) return;
+
+  const isPublicPage =
+
+    window.location.pathname.includes(
+      '/public/'
+    );
+
+  if (isPublicPage) return;
+
+  await renderPrivateLayout();
+}
+
+
+// ======================================================
+// PAGE MODULES
+// ======================================================
+
+async function loadPageModule() {
+
+  const page =
+    getCurrentPage();
+
+  switch (page) {
+
+    // DASHBOARD
+
+    case 'dashboard':
+
+      if (
+        window.location.pathname.includes(
+          '/admin/'
+        )
+      ) {
+
+        await initAdminDashboard();
+
+      } else {
+
+        await initDashboard();
+      }
+
+      break;
+
+    // SESSIONS
+
+    case 'sessions':
+
+      if (
+        window.location.pathname.includes(
+          '/admin/'
+        )
+      ) {
+
+        await initAdminSessions();
+
+      } else {
+
+        await initSessions();
+      }
+
+      break;
+
+    // USERS
+
+    case 'users':
+
+      await initAdminUsers();
+
+      break;
+
+    // RESOURCES
+
+    case 'resources':
+
+      await initResources();
+
+      initResourceSearch();
+
+      break;
+
+    // PROFILE
+
+    case 'profile':
+
+      await initProfile();
+
+      break;
+
+    default:
+
+      break;
+  }
+}
+
+
+// ======================================================
+// ANALYTICS
+// ======================================================
+
+function initAnalytics() {
+
+  initGoogleAnalytics();
+
+  initClarity();
+}
+
+
+// ======================================================
+// GOOGLE ANALYTICS
+// ======================================================
+
+function initGoogleAnalytics() {
+
+  const GA_ID =
+    import.meta.env.VITE_GA_ID;
+
+  if (!GA_ID) return;
+
+  const script =
+    document.createElement(
+      'script'
+    );
+
+  script.async = true;
+
+  script.src =
+    `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`;
+
+  document.head.appendChild(script);
+
+  window.dataLayer =
+    window.dataLayer || [];
+
+  function gtag() {
+
+    dataLayer.push(arguments);
+  }
+
+  window.gtag = gtag;
+
+  gtag('js', new Date());
+
+  gtag('config', GA_ID);
+}
+
+
+// ======================================================
+// MICROSOFT CLARITY
+// ======================================================
+
+function initClarity() {
+
+  const clarityId =
+    import.meta.env.VITE_CLARITY_ID;
+
+  if (!clarityId) return;
+
+  (function (c, l, a, r, i, t, y) {
+
+    c[a] =
+
+      c[a] ||
+
+      function () {
+
+        (c[a].q = c[a].q || [])
+          .push(arguments);
+      };
+
+    t =
+      l.createElement(r);
+
+    t.async = 1;
+
+    t.src =
+      `https://www.clarity.ms/tag/${i}`;
+
+    y =
+      l.getElementsByTagName(r)[0];
+
+    y.parentNode.insertBefore(
+      t,
+      y
+    );
+
+  })(
+
+    window,
+    document,
+    'clarity',
+    'script',
+    clarityId
+  );
+}
+
+
+// ======================================================
+// ACCESSIBILITY
+// ======================================================
+
+function initKeyboardAccessibility() {
+
+  document.addEventListener(
+
+    'keydown',
+
+    (event) => {
+
+      // ESC CLOSE MODALS
+
+      if (
+        event.key === 'Escape'
+      ) {
+
+        const modal =
+
+          document.querySelector(
+            '.modal-overlay'
+          );
+
+        if (modal) {
+
+          modal.remove();
+        }
+      }
+    }
+  );
+}
+
+
+// ======================================================
+// EXTERNAL LINKS
+// ======================================================
+
+function initExternalLinks() {
+
+  const links =
+
+    document.querySelectorAll(
+      'a[target="_blank"]'
+    );
+
+  links.forEach((link) => {
+
+    link.setAttribute(
+
+      'rel',
+
+      'noopener noreferrer'
+    );
+  });
+}
+
+
+// ======================================================
+// LAZY LOADING
+// ======================================================
+
+function initLazyLoading() {
+
+  const images =
+
+    document.querySelectorAll(
+      'img'
+    );
+
+  images.forEach((image) => {
+
+    image.loading = 'lazy';
+  });
+}

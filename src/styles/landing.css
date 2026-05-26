@@ -1,0 +1,476 @@
+.landing {
+  position: relative;
+
+  min-height: 100vh;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+
+  background:
+    var(--color-background);
+}
+
+/* =========================================
+   BACKGROUND
+========================================= */
+
+.landing-background {
+  position: absolute;
+  inset: 0;
+
+  overflow: hidden;
+}
+
+.landing-background::before {
+  content: '';
+
+  position: absolute;
+
+  top: -180px;
+  left: -180px;
+
+  width: 420px;
+  height: 420px;
+
+  border-radius: 50%;
+
+  background:
+    rgba(14,165,233,0.05);
+
+  filter: blur(80px);
+}
+
+.landing-background::after {
+  content: '';
+
+  position: absolute;
+
+  right: -220px;
+  bottom: -220px;
+
+  width: 520px;
+  height: 520px;
+
+  border-radius: 50%;
+
+  background:
+    rgba(15,23,42,0.04);
+
+  filter: blur(120px);
+}
+
+/* =========================================
+   HERO
+========================================= */
+
+.landing-hero {
+  position: relative;
+  z-index: 2;
+
+  flex: 1;
+
+  display: grid;
+  grid-template-columns: 38% 62%;
+
+  align-items: center;
+
+  width: 100%;
+
+  padding:
+    2rem
+    4rem;
+
+  gap: 1rem;
+}
+
+/* =========================================
+   LEFT
+========================================= */
+
+.landing-left {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  height: 100%;
+}
+
+.landing-big-logo {
+  width: 300px;
+
+  max-width: 100%;
+
+  object-fit: contain;
+
+  image-rendering:
+    -webkit-optimize-contrast;
+
+  filter:
+    drop-shadow(
+      0 10px 30px rgba(15,23,42,0.06)
+    );
+
+  animation:
+    landingFade 0.8s ease;
+}
+
+/* =========================================
+   RIGHT
+========================================= */
+
+.landing-right {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  height: 100%;
+}
+
+.landing-content {
+  width: 100%;
+  max-width: 760px;
+
+  text-align: left;
+
+  animation:
+    landingFade 0.8s ease;
+}
+
+.landing-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-bottom: 1.2rem;
+
+  padding:
+    0.65rem
+    1rem;
+
+  border:
+    1px solid rgba(14,165,233,0.10);
+
+  border-radius:
+    var(--radius-full);
+
+  background:
+    rgba(14,165,233,0.06);
+
+  color:
+    var(--color-accent);
+
+  font-size:
+    0.82rem;
+
+  font-weight:
+    var(--font-weight-semibold);
+}
+
+.landing-content h1 {
+  max-width: 760px;
+
+  margin:
+    0 0 1rem;
+
+  color:
+    var(--color-primary);
+
+  font-size:
+    clamp(
+      2.8rem,
+      4.4vw,
+      4.6rem
+    );
+
+  line-height: 0.95;
+
+  letter-spacing:
+    -0.05em;
+}
+
+.landing-description {
+  max-width: 620px;
+
+  margin-bottom: 1.5rem;
+
+  color:
+    var(--color-text-soft);
+
+  font-size:
+    1.02rem;
+
+  line-height: 1.8;
+}
+
+/* =========================================
+   ACTIONS
+========================================= */
+
+.landing-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+
+  gap: 1rem;
+
+  margin-bottom: 1rem;
+}
+
+.landing-actions .button {
+  min-width: 220px;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.landing-actions .button:hover {
+  transform:
+    translateY(-2px);
+
+  box-shadow:
+    0 10px 25px rgba(15,23,42,0.08);
+}
+
+/* =========================================
+   CONSENT
+========================================= */
+
+.landing-consent {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+
+  gap: 0.8rem;
+
+  width: 100%;
+  max-width: 760px;
+
+  padding:
+    1rem
+    1.3rem;
+
+  border:
+    var(--card-border);
+
+  border-radius:
+    var(--radius-xl);
+
+  background:
+    rgba(255,255,255,0.82);
+
+  backdrop-filter:
+    blur(14px);
+
+  box-shadow:
+    var(--shadow-sm);
+}
+
+.landing-consent input {
+  width: 18px;
+  height: 18px;
+
+  accent-color:
+    var(--color-accent);
+}
+
+.landing-consent label {
+  color:
+    var(--color-text-soft);
+
+  font-size:
+    0.9rem;
+
+  line-height: 1.6;
+}
+
+.landing-consent a {
+  color:
+    var(--color-accent);
+
+  font-weight:
+    var(--font-weight-medium);
+}
+
+.landing-consent-error {
+  margin-top: 1rem;
+
+  color:
+    var(--color-danger);
+
+  font-size:
+    0.9rem;
+
+  font-weight:
+    var(--font-weight-medium);
+
+  animation:
+    landingFade 0.2s ease;
+}
+
+/* =========================================
+   FOOTER
+========================================= */
+
+.landing-footer {
+  position: relative;
+  z-index: 5;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  width: 100%;
+
+  padding:
+    1rem
+    2.5rem;
+}
+
+.landing-footer-left {
+  display: flex;
+  align-items: center;
+
+  gap: 1.5rem;
+
+  flex-wrap: wrap;
+}
+
+.landing-footer-left a,
+.landing-footer p {
+  color:
+    var(--color-text-muted);
+
+  font-size:
+    0.82rem;
+}
+
+.landing-footer-left a {
+  transition:
+    color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.landing-footer-left a:hover {
+  opacity: 0.75;
+}
+
+/* =========================================
+   ANIMATION
+========================================= */
+
+@keyframes landingFade {
+
+  from {
+    opacity: 0;
+
+    transform:
+      translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+
+    transform:
+      translateY(0);
+  }
+
+}
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width: 1100px) {
+
+  .landing {
+    overflow-y: auto;
+  }
+
+  .landing-hero {
+    grid-template-columns: 1fr;
+
+    padding:
+      1.5rem
+      1.5rem
+      2rem;
+
+    text-align: center;
+  }
+
+  .landing-left {
+    justify-content: center;
+  }
+
+  .landing-big-logo {
+    width: 220px;
+  }
+
+  .landing-right {
+    justify-content: center;
+  }
+
+  .landing-content {
+    text-align: center;
+  }
+
+  .landing-description {
+    margin-inline: auto;
+  }
+
+  .landing-actions {
+    justify-content: center;
+  }
+
+  .landing-consent {
+    justify-content: center;
+  }
+
+}
+
+@media (max-width: 768px) {
+
+  .landing-content h1 {
+    font-size: 2.5rem;
+  }
+
+  .landing-description {
+    font-size:
+      0.98rem;
+  }
+
+  .landing-actions {
+    flex-direction: column;
+  }
+
+  .landing-actions .button {
+    width: 100%;
+  }
+
+  .landing-consent {
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    text-align: left;
+  }
+
+  .landing-footer {
+    flex-direction: column;
+
+    gap: 1rem;
+
+    text-align: center;
+
+    padding:
+      1.25rem;
+  }
+
+  .landing-footer-left {
+    justify-content: center;
+  }
+
+}

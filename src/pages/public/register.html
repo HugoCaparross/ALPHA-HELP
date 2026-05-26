@@ -1,489 +1,308 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
+
+  <!-- ======================================================
+       META
+       ====================================================== -->
 
   <meta charset="UTF-8" />
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Crear cuenta | ALPHA-HELP</title>
+  <title>
+    Registro | ALPHA-HELP
+  </title>
 
-  <meta
-    name="description"
-    content="Registro privado para acceder a la plataforma de bienestar digital y acompañamiento familiar."
-  />
 
-  <meta
-    name="robots"
-    content="noindex,nofollow"
-  />
+  <!-- ======================================================
+       STYLES
+       ====================================================== -->
 
-  <!-- CSS -->
   <link rel="stylesheet" href="/src/styles/base.css" />
+
   <link rel="stylesheet" href="/src/styles/components.css" />
+
   <link rel="stylesheet" href="/src/styles/auth.css" />
+
+
+  <!-- ======================================================
+       FAVICON
+       ====================================================== -->
+
+  <link rel="icon" href="/public/favicon.ico" />
 
 </head>
 
 <body>
 
-<main class="auth-layout">
 
-  <!-- HERO -->
-  <section class="auth-hero">
+  <!-- ======================================================
+       REGISTER LAYOUT
+       ====================================================== -->
 
-    <div class="auth-hero-content">
+  <main class="auth-layout">
 
-      <img
-        src="/src/assets/images/logo.png"
-        alt="ALPHA-HELP"
-        class="auth-hero-logo"
-      />
 
-      <span class="auth-badge">
-        Acceso seguro
-      </span>
+    <!-- ======================================================
+         BRANDING
+         ====================================================== -->
 
-      <h1>
-        Formación digital para familias.
-      </h1>
+    <section class="auth-branding">
 
-      <p>
-        Regístrate para acceder a sesiones, materiales y recursos exclusivos del programa.
-      </p>
+      <div class="auth-branding-content">
 
-    </div>
+        <div class="auth-logo-wrapper">
 
-  </section>
+          <img src="/src/assets/images/logo.png" alt="ALPHA-HELP" class="auth-logo" />
 
-  <!-- PANEL -->
-  <section class="auth-panel">
+        </div>
 
-    <div class="auth-card card">
+        <span class="auth-badge">
+          Acceso privado
+        </span>
 
-      <div class="auth-card-header">
+        <h1 class="auth-title">
 
-        <h2>
-          Crear cuenta
-        </h2>
+          Construyamos un entorno digital más saludable.
 
-        <p>
-          Completa tus datos para registrarte.
+        </h1>
+
+        <p class="auth-description">
+
+          Accede a sesiones, recursos y herramientas diseñadas
+          para acompañar a las familias en el bienestar digital.
+
         </p>
+
+        <div class="auth-features">
+
+          <div class="auth-feature">
+
+            <div class="auth-feature-icon">
+              ✓
+            </div>
+
+            <span>
+              Formación profesional
+            </span>
+
+          </div>
+
+          <div class="auth-feature">
+
+            <div class="auth-feature-icon">
+              ✓
+            </div>
+
+            <span>
+              Plataforma segura y privada
+            </span>
+
+          </div>
+
+          <div class="auth-feature">
+
+            <div class="auth-feature-icon">
+              ✓
+            </div>
+
+            <span>
+              Recursos prácticos para familias
+            </span>
+
+          </div>
+
+        </div>
 
       </div>
 
-      <form
-        id="register-form"
-        class="auth-form"
-        novalidate
-      >
+    </section>
 
-        <input
-          id="full_name"
-          class="input"
-          type="text"
-          placeholder="Nombre completo"
-          autocomplete="name"
-          maxlength="80"
-          required
-        />
 
-        <input
-          id="email"
-          class="input"
-          type="email"
-          placeholder="Correo electrónico"
-          autocomplete="email"
-          spellcheck="false"
-          required
-        />
+    <!-- ======================================================
+         FORM
+         ====================================================== -->
 
-        <input
-          id="password"
-          class="input"
-          type="password"
-          placeholder="Contraseña"
-          autocomplete="new-password"
-          minlength="8"
-          required
-        />
+    <section class="auth-form-section">
 
-        <select
-          id="region"
-          class="input"
-          required
-        >
+      <div class="auth-form-wrapper">
 
-          <option value="">
-            Selecciona tu región
-          </option>
+        <div class="auth-form-header">
 
-          <option value="ES">
-            España
-          </option>
+          <h2>
+            Crear cuenta
+          </h2>
 
-          <option value="LATAM">
-            Latinoamérica
-          </option>
+          <p>
+            Regístrate para acceder a la plataforma.
+          </p>
 
-        </select>
+        </div>
 
-        <label class="checkbox-row">
 
-          <input
-            id="terms"
-            type="checkbox"
-            required
-          />
+        <!-- ======================================================
+             FORM
+             ====================================================== -->
+
+        <form id="register-form" class="auth-form">
+
+          <div class="form-grid">
+
+            <div class="form-group">
+
+              <label for="name">
+                Nombre
+              </label>
+
+              <input type="text" id="name" name="name" placeholder="Tu nombre" autocomplete="given-name"
+                data-validate="name" required />
+
+            </div>
+
+            <div class="form-group">
+
+              <label for="surname">
+                Apellidos
+              </label>
+
+              <input type="text" id="surname" name="surname" placeholder="Tus apellidos" autocomplete="family-name"
+                data-validate="name" required />
+
+            </div>
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label for="email">
+              Email
+            </label>
+
+            <input type="email" id="email" name="email" placeholder="nombre@email.com" autocomplete="email"
+              data-validate="email" required />
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label for="country">
+              Región
+            </label>
+
+            <select id="country" name="country" required>
+
+              <option value="">
+                Selecciona una región
+              </option>
+
+              <option value="ES">
+                España
+              </option>
+
+              <option value="LATAM">
+                Latinoamérica
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label for="password">
+              Contraseña
+            </label>
+
+            <input type="password" id="password" name="password" placeholder="Mínimo 8 caracteres"
+              autocomplete="new-password" data-validate="password" required />
+
+          </div>
+
+
+          <button type="submit" class="btn btn-primary btn-full">
+
+            Crear cuenta
+
+          </button>
+
+        </form>
+
+
+        <!-- ======================================================
+             DIVIDER
+             ====================================================== -->
+
+        <div class="auth-divider">
 
           <span>
-            Acepto la política de privacidad y los términos legales.
+            o continuar con
           </span>
 
-        </label>
+        </div>
 
-        <p
-          id="form-error"
-          class="form-error hidden"
-          aria-live="polite"
-        ></p>
 
-        <button
-          id="register-btn"
-          class="button"
-          type="submit"
-        >
+        <!-- ======================================================
+             GOOGLE
+             ====================================================== -->
 
-          <span class="button-text">
-            Crear cuenta
-          </span>
+        <button id="google-register-button" class="auth-google-button">
 
-          <span class="button-loader hidden">
-            <span class="spinner-small"></span>
-          </span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M21.805 10.023h-9.18v3.955h5.27c-.227 1.273-.954 2.35-2.045 3.068v2.548h3.307c1.936-1.782 3.048-4.405 3.048-7.57 0-.682-.061-1.337-.175-2.001z"
+              fill="#4285F4" />
+            <path
+              d="M12.625 22c2.767 0 5.084-.916 6.778-2.479l-3.307-2.548c-.916.614-2.087.977-3.471.977-2.669 0-4.932-1.802-5.74-4.225H3.467v2.654C5.152 19.707 8.61 22 12.625 22z"
+              fill="#34A853" />
+            <path
+              d="M6.885 13.725A5.398 5.398 0 016.57 12c0-.598.107-1.177.315-1.725V7.621H3.467A9.375 9.375 0 002.5 12c0 1.51.363 2.939.967 4.379l3.418-2.654z"
+              fill="#FBBC05" />
+            <path
+              d="M12.625 6.05c1.505 0 2.857.518 3.92 1.535l2.938-2.938C17.705 2.973 15.388 2 12.625 2 8.61 2 5.152 4.293 3.467 7.621l3.418 2.654c.808-2.423 3.071-4.225 5.74-4.225z"
+              fill="#EA4335" />
+          </svg>
+
+          Continuar con Google
 
         </button>
 
-      </form>
 
-      <div class="auth-links">
+        <!-- ======================================================
+             FOOTER
+             ====================================================== -->
 
-        <a href="/src/pages/public/login.html">
-          Ya tengo cuenta
-        </a>
+        <div class="auth-footer">
+
+          <p>
+
+            ¿Ya tienes cuenta?
+
+            <a href="/src/pages/public/login.html" class="auth-link">
+              Iniciar sesión
+            </a>
+
+          </p>
+
+        </div>
 
       </div>
 
-      <footer class="auth-footer">
+    </section>
 
-        <a href="/src/pages/public/privacy.html">
-          Privacidad
-        </a>
+  </main>
 
-        <a href="/src/pages/public/terms.html">
-          Términos
-        </a>
 
-        <a href="/src/pages/public/cookies.html">
-          Cookies
-        </a>
+  <!-- ======================================================
+       MAIN
+       ====================================================== -->
 
-      </footer>
-
-    </div>
-
-  </section>
-
-</main>
-
-<script type="module">
-
-  import {
-    signUp
-  } from '/src/lib/auth.js'
-
-  import {
-
-    sanitize,
-    sanitizeEmail,
-
-    getNameError,
-    getEmailError,
-    getPasswordError,
-
-    isValidRegion
-
-  } from '/src/utils/validators.js'
-
-  const form =
-    document.getElementById('register-form')
-
-  const errorEl =
-    document.getElementById('form-error')
-
-  const submitBtn =
-    document.getElementById('register-btn')
-
-  // INPUTS
-  const nameInput =
-    document.getElementById('full_name')
-
-  const emailInput =
-    document.getElementById('email')
-
-  const passwordInput =
-    document.getElementById('password')
-
-  const regionInput =
-    document.getElementById('region')
-
-  const termsInput =
-    document.getElementById('terms')
-
-  // ─────────────────────────────────
-  // HELPERS
-  // ─────────────────────────────────
-
-  function setButtonLoading(state) {
-
-    submitBtn.classList.toggle(
-      'loading',
-      state
-    )
-
-    submitBtn.disabled = state
-
-    submitBtn
-      .querySelector('.button-text')
-      .classList.toggle('hidden', state)
-
-    submitBtn
-      .querySelector('.button-loader')
-      .classList.toggle('hidden', !state)
-
-  }
-
-  function showError(message) {
-
-    errorEl.textContent = message
-
-    errorEl.classList.remove('hidden')
-  }
-
-  function clearError() {
-
-    errorEl.textContent = ''
-
-    errorEl.classList.add('hidden')
-  }
-
-  function setInputError(input) {
-
-    input.classList.add('error')
-
-    input.classList.remove('success')
-  }
-
-  function setInputSuccess(input) {
-
-    input.classList.remove('error')
-
-    input.classList.add('success')
-  }
-
-  function resetInputState(input) {
-
-    input.classList.remove(
-      'error',
-      'success'
-    )
-  }
-
-  // ─────────────────────────────────
-  // LIVE VALIDATION
-  // ─────────────────────────────────
-
-  nameInput.addEventListener('input', () => {
-
-    resetInputState(nameInput)
-
-    const error =
-      getNameError(nameInput.value)
-
-    if (error) return
-
-    setInputSuccess(nameInput)
-
-  })
-
-  emailInput.addEventListener('input', () => {
-
-    resetInputState(emailInput)
-
-    const error =
-      getEmailError(emailInput.value)
-
-    if (error) return
-
-    setInputSuccess(emailInput)
-
-  })
-
-  passwordInput.addEventListener('input', () => {
-
-    resetInputState(passwordInput)
-
-    const error =
-      getPasswordError(passwordInput.value)
-
-    if (error) return
-
-    setInputSuccess(passwordInput)
-
-  })
-
-  regionInput.addEventListener('change', () => {
-
-    resetInputState(regionInput)
-
-    if (
-      !isValidRegion(regionInput.value)
-    ) return
-
-    setInputSuccess(regionInput)
-
-  })
-
-  // ─────────────────────────────────
-  // REGISTER
-  // ─────────────────────────────────
-
-  form.addEventListener('submit', async (e) => {
-
-    e.preventDefault()
-
-    clearError()
-
-    const full_name =
-      sanitize(nameInput.value)
-
-    const email =
-      sanitizeEmail(emailInput.value)
-
-    const password =
-      passwordInput.value.trim()
-
-    const region =
-      regionInput.value
-
-    // VALIDATION
-
-    const nameError =
-      getNameError(full_name)
-
-    const emailError =
-      getEmailError(email)
-
-    const passwordError =
-      getPasswordError(password)
-
-    if (nameError) {
-
-      setInputError(nameInput)
-
-      showError(nameError)
-
-      return
-    }
-
-    if (emailError) {
-
-      setInputError(emailInput)
-
-      showError(emailError)
-
-      return
-    }
-
-    if (passwordError) {
-
-      setInputError(passwordInput)
-
-      showError(passwordError)
-
-      return
-    }
-
-    if (!isValidRegion(region)) {
-
-      setInputError(regionInput)
-
-      showError(
-        'Selecciona una región válida.'
-      )
-
-      return
-    }
-
-    if (!termsInput.checked) {
-
-      showError(
-        'Debes aceptar los términos.'
-      )
-
-      return
-    }
-
-    // SUCCESS STATES
-
-    setInputSuccess(nameInput)
-
-    setInputSuccess(emailInput)
-
-    setInputSuccess(passwordInput)
-
-    setInputSuccess(regionInput)
-
-    setButtonLoading(true)
-
-    try {
-
-      await signUp({
-
-        full_name,
-        email,
-        password,
-        region
-
-      })
-
-      submitBtn.classList.add(
-        'success'
-      )
-
-      setTimeout(() => {
-
-        window.location.replace(
-          '/src/pages/public/login.html'
-        )
-
-      }, 700)
-
-    } catch (error) {
-
-      showError(error.message)
-
-      setButtonLoading(false)
-
-    }
-
-  })
-
-</script>
+  <script type="module" src="/src/main.js"></script>
 
 </body>
+
 </html>

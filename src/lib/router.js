@@ -1,192 +1,294 @@
-import {
-  getSession,
-  isAdmin
-} from './auth.js'
+// src/lib/router.js
 
-// ─────────────────────────────────────
+import {
+  requireAuth,
+  requireAdmin
+} from './auth.js';
+
+
+// ======================================================
 // ROUTES
-// ─────────────────────────────────────
+// ======================================================
 
 const PUBLIC_ROUTES = [
 
   '/src/pages/public/login.html',
+
   '/src/pages/public/register.html',
+
   '/src/pages/public/forgot-password.html',
+
   '/src/pages/public/reset-password.html',
 
   '/src/pages/public/privacy.html',
-  '/src/pages/public/terms.html',
+
   '/src/pages/public/cookies.html',
-  '/src/pages/public/legal-notice.html'
 
-]
+  '/src/pages/public/legal-notice.html',
 
-// ─────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────
+  '/src/pages/public/terms.html',
 
-function isPublicRoute(path) {
+  '/src/pages/public/404.html'
+];
 
-  return PUBLIC_ROUTES.some(
-    route => path.includes(route)
-  )
+
+const ADMIN_ROUTES = [
+
+  '/src/pages/admin/dashboard.html',
+
+  '/src/pages/admin/users.html',
+
+  '/src/pages/admin/sessions.html',
+
+  '/src/pages/admin/announcements.html'
+];
+
+
+// ======================================================
+// INIT ROUTER
+// ======================================================
+
+export async function initRouter() {
+
+  const currentPath =
+    window.location.pathname;
+
+  // PUBLIC
+
+  if (isPublicRoute(currentPath)) {
+    return;
+  }
+
+  // ADMIN
+
+  if (isAdminRoute(currentPath)) {
+
+    const isAdmin =
+      await requireAdmin();
+
+    if (!isAdmin) {
+      return;
+    }
+
+    return;
+  }
+
+  // PRIVATE
+
+  const authenticated =
+    await requireAuth();
+
+  if (!authenticated) {
+    return;
+  }
 }
 
-function isAdminRoute(path) {
 
-  return path.includes('/admin/')
+// ======================================================
+// PUBLIC ROUTE
+// ======================================================
+
+export function isPublicRoute(path) {
+
+  return PUBLIC_ROUTES.some(route =>
+    path.includes(route)
+  );
 }
 
-function isAppRoute(path) {
 
-  return (
-    path.includes('/app/')
-    || path.includes('/admin/')
-  )
+// ======================================================
+// ADMIN ROUTE
+// ======================================================
+
+export function isAdminRoute(path) {
+
+  return ADMIN_ROUTES.some(route =>
+    path.includes(route)
+  );
 }
 
-function redirect(path) {
 
-  window.location.replace(path)
-}
+// ======================================================
+// REDIRECT IF AUTHENTICATED
+// ======================================================
 
-// ─────────────────────────────────────
-// MAIN GUARD
-// ─────────────────────────────────────
+export async function redirectIfAuthenticated() {
 
-export async function initGuard() {
-
-  const path =
-    window.location.pathname
+  const {
+    getSession
+  } = await import('./auth.js');
 
   const session =
-    await getSession()
+    await getSession();
 
-  const publicPage =
-    isPublicRoute(path)
+  if (!session) return;
 
-  const protectedPage =
-    isAppRoute(path)
+  const currentPath =
+    window.location.pathname;
 
-  // ─────────────────────────────────
-  // NO SESSION + PRIVATE PAGE
-  // ─────────────────────────────────
+  if (isPublicRoute(currentPath)) {
 
-  if (
-    !session &&
-    protectedPage
-  ) {
-
-    redirect(
-      '/src/pages/public/login.html'
-    )
-
-    return null
+    window.location.href =
+      '/src/pages/app/dashboard.html';
   }
+}
 
-  // ─────────────────────────────────
-  // SESSION + AUTH PAGE
-  // ─────────────────────────────────
 
-  if (
-    session &&
-    (
-      path.includes('/login.html')
-      || path.includes('/register.html')
-    )
-  ) {
+// ======================================================
+// NAVIGATE
+// ======================================================
 
-    redirect(
-      '/src/pages/app/dashboard.html'
-    )
+export function navigate(path) {
 
-    return null
-  }
+  if (!path) return;
 
-  // ─────────────────────────────────
-  // ADMIN VALIDATION
-  // ─────────────────────────────────
+  window.location.href = path;
+}
 
-  if (
-    session &&
-    isAdminRoute(path)
-  ) {
 
-    const admin =
-      await isAdmin()
+// ======================================================
+// BACK
+// ======================================================
 
-    if (!admin) {
+export function goBack() {
 
-      redirect(
-        '/src/pages/app/dashboard.html'
-      )
+  window.history.back();
+}
 
-      return null
+
+// ======================================================
+// CURRENT PAGE
+// ======================================================
+
+export function getCurrentPage() {
+
+  const path =
+    window.location.pathname;
+
+  return path
+    .split('/')
+    .pop()
+    ?.replace('.html', '');
+}
+
+
+// ======================================================
+// PAGE TITLE
+// ======================================================
+
+export function setPageTitle(title) {
+
+  document.title =
+    `${title} | ALPHA-HELP`;
+}
+
+
+// ======================================================
+// ACTIVE NAVIGATION
+// ======================================================
+
+export function setActiveNavLink() {
+
+  const currentPage =
+    getCurrentPage();
+
+  const links =
+    document.querySelectorAll(
+      '[data-nav-link]'
+    );
+
+  links.forEach(link => {
+
+    const page =
+      link.dataset.navLink;
+
+    if (page === currentPage) {
+
+      link.classList.add('active');
+
+    } else {
+
+      link.classList.remove('active');
     }
-
-  }
-
-  // ─────────────────────────────────
-  // VALID SESSION
-  // ─────────────────────────────────
-
-  return session
+  });
 }
 
-// ─────────────────────────────────────
-// ROUTER HELPERS
-// ─────────────────────────────────────
 
-export function goTo(path) {
+// ======================================================
+// NOT FOUND
+// ======================================================
 
-  if (!path) return
+export function redirectTo404() {
 
-  window.location.href = path
+  window.location.href =
+    '/src/pages/public/404.html';
 }
 
-export function reloadPage() {
 
-  window.location.reload()
-}
+// ======================================================
+// LOGOUT ROUTE
+// ======================================================
 
-export function back() {
+export async function handleLogoutRoute() {
 
-  window.history.back()
-}
+  const logoutButton =
+    document.querySelector(
+      '[data-logout]'
+    );
 
-// ─────────────────────────────────────
-// SAFE ROUTE LOADER
-// ─────────────────────────────────────
+  if (!logoutButton) return;
 
-export async function loadProtectedPage(
-  callback
-) {
+  const {
+    logout
+  } = await import('./auth.js');
 
-  try {
+  logoutButton.addEventListener(
+    'click',
+    async () => {
 
-    const session =
-      await initGuard()
-
-    if (!session) return
-
-    if (
-      typeof callback === 'function'
-    ) {
-
-      await callback(session)
-
+      await logout();
     }
+  );
+}
 
-  } catch (error) {
 
-    console.error(
-      '[ROUTER_ERROR]',
-      error
-    )
+// ======================================================
+// PROTECTED PAGE INIT
+// ======================================================
 
-    redirect(
-      '/src/pages/public/login.html'
-    )
+export async function initProtectedPage() {
 
+  const authenticated =
+    await requireAuth();
+
+  if (!authenticated) {
+    return false;
   }
+
+  setActiveNavLink();
+
+  await handleLogoutRoute();
+
+  return true;
+}
+
+
+// ======================================================
+// ADMIN PAGE INIT
+// ======================================================
+
+export async function initAdminPage() {
+
+  const admin =
+    await requireAdmin();
+
+  if (!admin) {
+    return false;
+  }
+
+  setActiveNavLink();
+
+  await handleLogoutRoute();
+
+  return true;
 }
