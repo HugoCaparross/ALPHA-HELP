@@ -292,3 +292,5 @@ export async function initAdminPage() {
 
   return true;
 }
+
+export { initProtectedPage as initGuard };

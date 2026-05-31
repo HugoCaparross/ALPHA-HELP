@@ -1,26 +1,17 @@
 // src/components/layout.js
 
-import {
-  getMyProfile
-} from '../lib/db.js';
+import { getMyProfile } from "../lib/db.js";
 
-import {
-  logout
-} from '../lib/auth.js';
+import { logout } from "../lib/auth.js";
 
-import {
-  getCurrentPage
-} from '../lib/router.js';
-
+import { getCurrentPage } from "../lib/router.js";
 
 // ======================================================
 // PRIVATE LAYOUT
 // ======================================================
 
 export async function renderPrivateLayout() {
-
-  const profile =
-    await getMyProfile();
+  const profile = await getMyProfile();
 
   renderSidebar(profile);
 
@@ -31,17 +22,12 @@ export async function renderPrivateLayout() {
   setActiveNavigation();
 }
 
-
 // ======================================================
 // SIDEBAR
 // ======================================================
 
 function renderSidebar(profile) {
-
-  const sidebar =
-    document.querySelector(
-      '#sidebar'
-    );
+  const sidebar = document.querySelector("#sidebar");
 
   if (!sidebar) return;
 
@@ -55,7 +41,7 @@ function renderSidebar(profile) {
           class="sidebar-logo"
         >
           <img
-            src="/src/assets/images/logo.svg"
+            src="/src/assets/images/logo.png"
             alt="ALPHA-HELP"
           >
         </a>
@@ -72,23 +58,23 @@ function renderSidebar(profile) {
 
         <div class="sidebar-user">
 
-          <div class="sidebar-user-avatar">
-            ${getInitials(profile.full_name)}
-          </div>
+  <div class="sidebar-user-avatar">
+    ${(profile?.full_name || profile?.email || "U").charAt(0).toUpperCase()}
+  </div>
 
-          <div class="sidebar-user-info">
+  <div>
 
-            <span class="sidebar-user-name">
-              ${profile.full_name}
-            </span>
+    <span class="sidebar-user-name">
+      ${profile?.full_name || profile?.email || "Usuario"}
+    </span>
 
-            <span class="sidebar-user-region">
-              ${profile.region}
-            </span>
+    <span class="sidebar-user-region">
+      ${profile?.region || ""}
+    </span>
 
-          </div>
+  </div>
 
-        </div>
+</div>
 
       </div>
 
@@ -96,113 +82,141 @@ function renderSidebar(profile) {
   `;
 }
 
-
 // ======================================================
 // NAV LINKS
 // ======================================================
 
 function renderNavLinks(profile) {
-
   const links = [
-
     {
-      label: 'Dashboard',
-      icon: '🏠',
-      href:
-        '/src/pages/app/dashboard.html',
-      page: 'dashboard'
+      label: "Inicio",
+      icon: `
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+      viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9.5L12 2l9 7.5"/>
+        <path d="M9 22V12h6v10"/>
+      </svg>
+    `,
+      href: "/src/pages/app/dashboard.html",
+      page: "dashboard",
     },
 
     {
-      label: 'Sesiones',
-      icon: '🎥',
-      href:
-        '/src/pages/app/sessions.html',
-      page: 'sessions'
+      label: "Sesiones",
+      icon: `
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+      viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="5 3 19 12 5 21 5 3"/>
+      </svg>
+    `,
+      href: "/src/pages/app/sessions.html",
+      page: "sessions",
     },
 
     {
-      label: 'Recursos',
-      icon: '📚',
-      href:
-        '/src/pages/app/resources.html',
-      page: 'resources'
+      label: "Cuestionarios",
+      icon: `
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+      viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 11l3 3L22 4"/>
+        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+      </svg>
+    `,
+      href: "/src/pages/app/questionnaires.html",
+      page: "questionnaires",
     },
 
     {
-      label: 'FAQ',
-      icon: '❓',
-      href:
-        '/src/pages/app/faq.html',
-      page: 'faq'
+      label: "Recursos",
+      icon: `
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+      viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+      </svg>
+    `,
+      href: "/src/pages/app/resources.html",
+      page: "resources",
     },
 
     {
-      label: 'Contacto',
-      icon: '✉️',
-      href:
-        '/src/pages/app/contact.html',
-      page: 'contact'
+      label: "Ayuda",
+      icon: `
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+      viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M9.09 9a3 3 0 1 1 5.82 1c0 2-3 3-3 3"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+    `,
+      href: "/src/pages/app/faq.html",
+      page: "faq",
     },
 
     {
-      label: 'Perfil',
-      icon: '👤',
-      href:
-        '/src/pages/app/profile.html',
-      page: 'profile'
-    }
+      label: "Mi perfil",
+      icon: `
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+      viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21a8 8 0 0 0-16 0"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+    `,
+      href: "/src/pages/app/profile.html",
+      page: "profile",
+    },
   ];
 
   // ADMIN
 
   if (profile.is_admin) {
-
     links.push({
+      label: "Administración",
 
-      label: 'Administración',
+      icon: "⚙️",
 
-      icon: '⚙️',
+      href: "/src/pages/admin/dashboard.html",
 
-      href:
-        '/src/pages/admin/dashboard.html',
-
-      page: 'admin'
+      page: "admin",
     });
   }
 
-  return links.map(link => `
+  return links
+    .map(
+      (link) => `
 
-    <a
-      href="${link.href}"
-      class="sidebar-link"
-      data-nav-link="${link.page}"
-    >
+<a
+  href="${link.href}"
+  class="sidebar-link ${isActive ? "active" : ""}"
+>
 
-      <span class="sidebar-link-icon">
-        ${link.icon}
-      </span>
+  <div class="sidebar-link-icon">
+    ${link.icon}
+  </div>
 
-      <span class="sidebar-link-label">
-        ${link.label}
-      </span>
+  <span>
+    ${link.label}
+  </span>
 
-    </a>
+</a>
 
-  `).join('');
+  `,
+    )
+    .join("");
 }
-
 
 // ======================================================
 // TOPBAR
 // ======================================================
 
 function renderTopbar(profile) {
-
-  const topbar =
-    document.querySelector(
-      '#topbar'
-    );
+  const topbar = document.querySelector("#topbar");
 
   if (!topbar) return;
 
@@ -283,17 +297,12 @@ function renderTopbar(profile) {
   initMobileSidebar();
 }
 
-
 // ======================================================
 // FOOTER
 // ======================================================
 
 function renderFooter() {
-
-  const footer =
-    document.querySelector(
-      '#footer'
-    );
+  const footer = document.querySelector("#footer");
 
   if (!footer) return;
 
@@ -342,133 +351,91 @@ function renderFooter() {
   `;
 }
 
-
 // ======================================================
 // ACTIVE NAVIGATION
 // ======================================================
 
 function setActiveNavigation() {
+  const currentPage = getCurrentPage();
 
-  const currentPage =
-    getCurrentPage();
+  const links = document.querySelectorAll("[data-nav-link]");
 
-  const links =
-    document.querySelectorAll(
-      '[data-nav-link]'
-    );
+  links.forEach((link) => {
+    const page = link.dataset.navLink;
 
-  links.forEach(link => {
-
-    const page =
-      link.dataset.navLink;
-
-    if (
-      currentPage.includes(page)
-    ) {
-
-      link.classList.add('active');
-
+    if (currentPage.includes(page)) {
+      link.classList.add("active");
     } else {
-
-      link.classList.remove('active');
+      link.classList.remove("active");
     }
   });
 }
-
 
 // ======================================================
 // LOGOUT
 // ======================================================
 
 function initLogout() {
-
-  const logoutButton =
-    document.getElementById(
-      'logout-button'
-    );
+  const logoutButton = document.getElementById("logout-button");
 
   if (!logoutButton) return;
 
-  logoutButton.addEventListener(
-    'click',
-    async () => {
-
-      await logout();
-    }
-  );
+  logoutButton.addEventListener("click", async () => {
+    await logout();
+  });
 }
-
 
 // ======================================================
 // MOBILE SIDEBAR
 // ======================================================
 
 function initMobileSidebar() {
+  const button = document.getElementById("mobile-menu-button");
 
-  const button =
-    document.getElementById(
-      'mobile-menu-button'
-    );
-
-  const sidebar =
-    document.querySelector(
-      '.sidebar'
-    );
+  const sidebar = document.querySelector(".sidebar");
 
   if (!button || !sidebar) return;
 
-  button.addEventListener(
-    'click',
-    () => {
-
-      sidebar.classList.toggle(
-        'sidebar-open'
-      );
-    }
-  );
+  button.addEventListener("click", () => {
+    sidebar.classList.toggle("sidebar-open");
+  });
 }
-
 
 // ======================================================
 // HELPERS
 // ======================================================
 
-function getInitials(name = '') {
-
+function getInitials(name = "") {
   return name
-    .split(' ')
-    .map(word => word[0])
-    .join('')
+    .split(" ")
+    .map((word) => word[0])
+    .join("")
     .slice(0, 2)
     .toUpperCase();
 }
 
-
 function formatPageName() {
+  const page = getCurrentPage();
 
-  const page =
-    getCurrentPage();
-
-  if (!page) return 'Dashboard';
+  if (!page) return "Dashboard";
 
   const names = {
+    dashboard: "Dashboard",
 
-    dashboard: 'Dashboard',
+    sessions: "Sesiones",
 
-    sessions: 'Sesiones',
+    resources: "Recursos",
 
-    resources: 'Recursos',
+    faq: "FAQ",
 
-    faq: 'FAQ',
+    contact: "Contacto",
 
-    contact: 'Contacto',
+    profile: "Perfil",
 
-    profile: 'Perfil',
+    users: "Usuarios",
 
-    users: 'Usuarios',
-
-    announcements: 'Avisos'
+    announcements: "Avisos",
   };
 
-  return names[page] || 'ALPHA-HELP';
+  return names[page] || "ALPHA-HELP";
 }

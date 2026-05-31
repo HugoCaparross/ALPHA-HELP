@@ -694,3 +694,73 @@ USING (
   bucket_id = 'resources'
   AND is_admin()
 );
+
+-- ═══════════════════════════════════════
+-- CUESTIONARIOS Y RESPUESTAS
+-- ═══════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS questionnaires (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL UNIQUE,
+  description TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS questionnaire_questions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  questionnaire_id UUID NOT NULL REFERENCES questionnaires(id) ON DELETE CASCADE,
+  section TEXT NOT NULL,
+  question_number INTEGER NOT NULL,
+  question TEXT NOT NULL,
+  options JSONB,
+  scale_min INTEGER,
+  scale_max INTEGER,
+  scale_labels JSONB,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(questionnaire_id, question_number)
+);
+
+CREATE TABLE IF NOT EXISTS questionnaire_answers (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  questionnaire_id UUID NOT NULL REFERENCES questionnaires(id) ON DELETE CASCADE,
+  question_id UUID NOT NULL REFERENCES questionnaire_questions(id) ON DELETE CASCADE,
+  likert_value INTEGER,
+  text_value TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(user_id, questionnaire_id, question_id)
+);
+
+CREATE TABLE IF NOT EXISTS user_children (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  child_order INTEGER NOT NULL,
+  age INTEGER NOT NULL,
+  sex TEXT NOT NULL CHECK (sex IN ('Mujer', 'Hombre', 'Otro')),
+  received_therapy BOOLEAN NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(user_id, child_order)
+);
+
+ALTER TABLE questionnaires ENABLE ROW LEVEL SECURITY;
+ALTER TABLE questionnaire_questions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE questionnaire_answers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_children ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "questionnaires_read_all" ON questionnaires FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "questions_read_all" ON questionnaire_questions FOR SELECT USING (auth.role() = 'authenticated');
+
+CREATE POLICY "answers_own_select" ON questionnaire_answers FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "answers_own_insert" ON questionnaire_answers FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "answers_own_update" ON questionnaire_answers FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "children_own_select" ON user_children FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "children_own_insert" ON user_children FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "children_own_update" ON user_children FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "children_own_delete" ON user_children FOR DELETE USING (auth.uid() = user_id);
+
+CREATE POLICY "questionnaires_admin_all" ON questionnaires FOR ALL USING (is_admin());
+CREATE POLICY "questions_admin_all" ON questionnaire_questions FOR ALL USING (is_admin());
+CREATE POLICY "answers_admin_all" ON questionnaire_answers FOR ALL USING (is_admin());
+CREATE POLICY "children_admin_all" ON user_children FOR ALL USING (is_admin());

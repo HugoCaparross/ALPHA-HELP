@@ -1,25 +1,17 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
 
   <meta charset="UTF-8" />
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <title>Dashboard | ALPHA-HELP</title>
 
-  <meta
-    name="description"
-    content="Panel privado de sesiones y recursos."
-  />
+  <meta name="description" content="Panel privado de sesiones y recursos." />
 
-  <meta
-    name="robots"
-    content="noindex,nofollow"
-  />
+  <meta name="robots" content="noindex,nofollow" />
 
   <!-- CSS -->
   <link rel="stylesheet" href="/src/styles/base.css" />
@@ -30,14 +22,40 @@
 
 <body>
 
-  <!-- APP -->
-  <div id="app"></div>
+  <div id="sidebar"></div>
 
-  <!-- JS -->
-  <script
-    type="module"
-    src="/src/main.js"
-  ></script>
+  <div class="app-container">
+
+    <div id="topbar"></div>
+
+    <main id="dashboard-content">
+
+      <section id="dashboard-welcome"></section>
+
+      <section id="dashboard-progress"></section>
+
+      <div class="dashboard-top-grid">
+
+        <section id="dashboard-questionnaire"></section>
+
+        <section id="dashboard-next-session"></section>
+
+      </div>
+
+      <section id="dashboard-announcements"></section>
+
+      <section id="dashboard-actions"></section>
+
+      <section id="dashboard-recent-sessions"></section>
+
+    </main>
+
+    <div id="footer"></div>
+
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
 
 </body>
+
 </html>

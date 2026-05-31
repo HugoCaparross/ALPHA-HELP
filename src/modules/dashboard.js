@@ -5,113 +5,81 @@ import {
   getMySessions,
   getUpcomingSession,
   getAnnouncements,
-  getUserProgress
-} from '../lib/db.js';
+  getUserProgress,
+} from "../lib/db.js";
 
-import {
-  showLoader,
-  hideLoader,
-  renderEmptyState
-} from '../components/ui.js';
+import { showLoader, hideLoader, renderEmptyState } from "../components/ui.js";
 
-import {
-  formatDate,
-  formatTime
-} from '../utils/helpers.js';
-
+import { formatDate, formatTime } from "../utils/helpers.js";
 
 // ======================================================
 // INIT DASHBOARD
 // ======================================================
 
 export async function initDashboard() {
-
   try {
-
     showLoader();
 
-    const [
-      profile,
-      sessions,
-      upcomingSession,
-      announcements,
-      progress
-    ] = await Promise.all([
+    const [profile, sessions, upcomingSession, announcements, progress] =
+      await Promise.all([
+        getMyProfile(),
 
-      getMyProfile(),
+        getMySessions(),
 
-      getMySessions(),
+        getUpcomingSession(),
 
-      getUpcomingSession(),
+        getAnnouncements(),
 
-      getAnnouncements(),
-
-      getUserProgress()
-    ]);
+        getUserProgress(),
+      ]);
 
     renderWelcome(profile);
 
-    renderProgress(sessions, progress);
+    renderUpcomingSession(upcomingSession);
 
-    renderUpcomingSession(
-      upcomingSession
-    );
+    renderQuestionnaireCard();
 
-    renderAnnouncements(
-      announcements
-    );
+    renderAnnouncements(announcements);
 
-    renderQuickActions();
-
-    renderRecentSessions(
-      sessions
-    );
-
+    renderRecentSessions(sessions);
   } catch (error) {
-
     console.error(error);
 
     renderDashboardError();
-
   } finally {
-
     hideLoader();
   }
 }
-
 
 // ======================================================
 // WELCOME
 // ======================================================
 
 function renderWelcome(profile) {
-
-  const container =
-    document.getElementById(
-      'dashboard-welcome'
-    );
+  const container = document.getElementById("dashboard-welcome");
 
   if (!container) return;
 
-  const firstName =
-    profile.full_name.split(' ')[0];
+  const firstName = profile.full_name.split(" ")[0];
 
   container.innerHTML = `
     <div class="dashboard-welcome-card">
 
       <div>
 
-        <h1 class="dashboard-title">
-          Hola, ${firstName}
-        </h1>
+<h1 class="dashboard-title">
+  Bienvenido de vuelta, ${firstName} 👋
+</h1>
 
-        <p class="dashboard-subtitle">
+<p class="dashboard-subtitle">
 
-          Bienvenido/a a tu plataforma de
-          intervención familiar y bienestar
-          digital.
+Continúa tu recorrido en ALPHA-HELP.
 
-        </p>
+Completa tus cuestionarios y accede a las grabaciones de tu programa.
+
+Todo el contenido está disponible desde el menú lateral.
+
+</p>
 
       </div>
 
@@ -127,107 +95,23 @@ function renderWelcome(profile) {
   `;
 }
 
-
-// ======================================================
-// PROGRESS
-// ======================================================
-
-function renderProgress(
-  sessions = [],
-  progress = []
-) {
-
-  const container =
-    document.getElementById(
-      'dashboard-progress'
-    );
-
-  if (!container) return;
-
-  const completed =
-    progress.filter(
-      item => item.completed
-    ).length;
-
-  const total =
-    sessions.length;
-
-  const percentage =
-    total
-      ? Math.round(
-          (completed / total) * 100
-        )
-      : 0;
-
-  container.innerHTML = `
-    <div class="dashboard-widget">
-
-      <div class="dashboard-widget-header">
-
-        <h2>
-          Tu progreso
-        </h2>
-
-        <span class="dashboard-progress-count">
-          ${completed} / ${total}
-        </span>
-
-      </div>
-
-      <div class="dashboard-progress-bar">
-
-        <div
-          class="dashboard-progress-fill"
-          style="width:${percentage}%"
-        ></div>
-
-      </div>
-
-      <p class="dashboard-progress-text">
-
-        Has completado
-        ${completed}
-        ${
-          completed === 1
-            ? 'sesión'
-            : 'sesiones'
-        }
-
-      </p>
-
-    </div>
-  `;
-}
-
-
 // ======================================================
 // UPCOMING SESSION
 // ======================================================
 
-function renderUpcomingSession(
-  session
-) {
-
-  const container =
-    document.getElementById(
-      'dashboard-next-session'
-    );
+function renderUpcomingSession(session) {
+  const container = document.getElementById("dashboard-next-session");
 
   if (!container) return;
 
   if (!session) {
+    const empty = renderEmptyState({
+      icon: "📅",
 
-    const empty =
-      renderEmptyState({
+      title: "No hay próximas sesiones",
 
-        icon: '📅',
-
-        title:
-          'No hay próximas sesiones',
-
-        description:
-          'Las nuevas sesiones aparecerán aquí automáticamente.'
-      });
+      description: "Las nuevas sesiones aparecerán aquí automáticamente.",
+    });
 
     container.appendChild(empty);
 
@@ -285,19 +169,53 @@ function renderUpcomingSession(
   `;
 }
 
+// ======================================================
+// QUESTIONNAIRE
+// ======================================================
+
+function renderQuestionnaireCard() {
+  const container = document.getElementById("dashboard-questionnaire");
+
+  if (!container) return;
+
+  container.innerHTML = `
+
+    <div class="dashboard-widget">
+
+      <div class="dashboard-widget-header">
+
+        <h2>
+          Cuestionario
+        </h2>
+
+      </div>
+
+      <span class="questionnaire-status">
+        Pendiente
+      </span>
+
+      <h3 class="questionnaire-title">
+        Cuestionario Inicial (PRE)
+      </h3>
+
+      <a
+        href="/src/pages/app/questionnaires.html"
+        class="btn btn-primary"
+      >
+        Comenzar
+      </a>
+
+    </div>
+
+  `;
+}
 
 // ======================================================
 // ANNOUNCEMENTS
 // ======================================================
 
-function renderAnnouncements(
-  announcements = []
-) {
-
-  const container =
-    document.getElementById(
-      'dashboard-announcements'
-    );
+function renderAnnouncements(announcements = []) {
+  const container = document.getElementById("dashboard-announcements");
 
   if (!container) return;
 
@@ -305,8 +223,9 @@ function renderAnnouncements(
     return;
   }
 
-  container.innerHTML =
-    announcements.map(item => `
+  container.innerHTML = announcements
+    .map(
+      (item) => `
 
       <div
         class="
@@ -329,121 +248,41 @@ function renderAnnouncements(
 
       </div>
 
-    `).join('');
+    `,
+    )
+    .join("");
 }
-
-
-// ======================================================
-// QUICK ACTIONS
-// ======================================================
-
-function renderQuickActions() {
-
-  const container =
-    document.getElementById(
-      'dashboard-actions'
-    );
-
-  if (!container) return;
-
-  const actions = [
-
-    {
-      label: 'Sesiones',
-      icon: '🎥',
-      href:
-        '/src/pages/app/sessions.html'
-    },
-
-    {
-      label: 'Recursos',
-      icon: '📚',
-      href:
-        '/src/pages/app/resources.html'
-    },
-
-    {
-      label: 'FAQ',
-      icon: '❓',
-      href:
-        '/src/pages/app/faq.html'
-    },
-
-    {
-      label: 'Contacto',
-      icon: '✉️',
-      href:
-        '/src/pages/app/contact.html'
-    }
-  ];
-
-  container.innerHTML =
-    actions.map(action => `
-
-      <a
-        href="${action.href}"
-        class="quick-action-card"
-      >
-
-        <div class="quick-action-icon">
-          ${action.icon}
-        </div>
-
-        <span class="quick-action-label">
-          ${action.label}
-        </span>
-
-      </a>
-
-    `).join('');
-}
-
 
 // ======================================================
 // RECENT SESSIONS
 // ======================================================
 
-function renderRecentSessions(
-  sessions = []
-) {
-
-  const container =
-    document.getElementById(
-      'dashboard-recent-sessions'
-    );
+function renderRecentSessions(sessions = []) {
+  const container = document.getElementById("dashboard-recent-sessions");
 
   if (!container) return;
 
-  const available =
-    sessions
-      .filter(
-        session =>
-          session.status !==
-          'upcoming'
-      )
-      .slice(0, 3);
+  const available = sessions
+    .filter((session) => session.status !== "upcoming")
+    .slice(0, 3);
 
   if (!available.length) {
+    const empty = renderEmptyState({
+      icon: "🎥",
 
-    const empty =
-      renderEmptyState({
+      title: "No hay sesiones disponibles",
 
-        icon: '🎥',
-
-        title:
-          'No hay sesiones disponibles',
-
-        description:
-          'Las sesiones aparecerán aquí automáticamente.'
-      });
+      description: "Las sesiones aparecerán aquí automáticamente.",
+    });
 
     container.appendChild(empty);
 
     return;
   }
 
-  container.innerHTML =
-    available.map(session => `
+  container.innerHTML = available
+    .map(
+      (session) => `
 
       <div class="session-card">
 
@@ -463,9 +302,7 @@ function renderRecentSessions(
             "
           >
 
-            ${getStatusLabel(
-              session.status
-            )}
+            ${getStatusLabel(session.status)}
 
           </span>
 
@@ -481,55 +318,45 @@ function renderRecentSessions(
 
       </div>
 
-    `).join('');
+    `,
+    )
+    .join("");
 }
-
 
 // ======================================================
 // HELPERS
 // ======================================================
 
 function getStatusLabel(status) {
-
   const labels = {
+    upcoming: "Próximamente",
 
-    upcoming: 'Próximamente',
+    available: "Disponible",
 
-    available: 'Disponible',
-
-    completed: 'Completada'
+    completed: "Completada",
   };
 
   return labels[status] || status;
 }
-
 
 // ======================================================
 // ERROR
 // ======================================================
 
 function renderDashboardError() {
-
-  const container =
-    document.getElementById(
-      'dashboard-content'
-    );
+  const container = document.getElementById("dashboard-content");
 
   if (!container) return;
 
-  const empty =
-    renderEmptyState({
+  const empty = renderEmptyState({
+    icon: "⚠️",
 
-      icon: '⚠️',
+    title: "Error cargando el dashboard",
 
-      title:
-        'Error cargando el dashboard',
+    description: "Ha ocurrido un error inesperado. Inténtalo más tarde.",
+  });
 
-      description:
-        'Ha ocurrido un error inesperado. Inténtalo más tarde.'
-    });
-
-  container.innerHTML = '';
+  container.innerHTML = "";
 
   container.appendChild(empty);
 }

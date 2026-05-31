@@ -1,223 +1,335 @@
-/* ───────────────────────────────────── */
-/* DASHBOARD */
-/* ───────────────────────────────────── */
+/* =======================================
+   DASHBOARD ALPHA-HELP
+======================================= */
+
+:root {
+  --primary: #0f172a;
+  --primary-light: #1e293b;
+
+  --secondary: #334155;
+  --secondary-light: #475569;
+
+  --accent: #0ea5e9;
+  --accent-hover: #0284c7;
+
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+
+  --background: #f8fafc;
+  --surface: #ffffff;
+  --surface-hover: #f1f5f9;
+
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+
+  --text: #0f172a;
+  --text-soft: #64748b;
+  --text-muted: #94a3b8;
+}
+
+/* ==========================
+   GRID GENERAL
+========================== */
 
 .dashboard-grid {
-
   display: grid;
-
-  gap: 1.5rem;
+  gap: 24px;
 }
 
-.dashboard-section-header {
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  margin-bottom: 1rem;
-}
-
-.dashboard-section-header h2 {
-
-  font-size: 1.25rem;
-
-  letter-spacing: -0.02em;
-}
-
-/* ───────────────────────────────────── */
-/* WELCOME */
-/* ───────────────────────────────────── */
+/* ==========================
+   HERO
+========================== */
 
 .dashboard-welcome-card {
-
-  padding: 2rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
 }
 
 .dashboard-title {
-
-  font-size: 2.1rem;
+  font-size: 2rem;
   font-weight: 700;
-
-  letter-spacing: -0.03em;
-
-  margin-bottom: 0.75rem;
+  color: var(--text);
+  margin-bottom: 12px;
 }
 
 .dashboard-subtitle {
-
-  max-width: 700px;
-
-  color: var(--text-light);
-
+  color: var(--text-soft);
   line-height: 1.7;
+  max-width: 700px;
 }
 
-/* ───────────────────────────────────── */
-/* ANNOUNCEMENTS */
-/* ───────────────────────────────────── */
+.dashboard-region-badge {
+  display: inline-flex;
+  margin-top: 20px;
+  background: rgba(14, 165, 233, 0.12);
+  color: var(--accent-hover);
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-weight: 600;
+}
 
-.dashboard-cards {
+/* ==========================
+   FILA SUPERIOR
+========================== */
 
+.dashboard-top-grid {
   display: grid;
 
-  grid-template-columns:
-    repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: 2fr 1fr;
 
-  gap: 1.25rem;
+  gap: 24px;
+
+  margin-top: 24px;
+}
+
+.dashboard-widget {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+}
+
+.dashboard-widget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.dashboard-widget-header h2 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* ==========================
+   PROGRESO
+========================== */
+
+.dashboard-progress-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.dashboard-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  border-radius: 999px;
+}
+
+.dashboard-progress-text {
+  color: var(--text-soft);
+}
+
+.dashboard-progress-count {
+  font-weight: 700;
+  color: var(--accent-hover);
+}
+
+/* ==========================
+   SESIÓN
+========================== */
+
+.next-session-title {
+  font-size: 1.35rem;
+  margin: 10px 0;
+}
+
+.next-session-meta {
+  display: flex;
+  gap: 16px;
+  color: var(--text-soft);
+  margin: 20px 0;
+}
+
+.next-session-month {
+  color: var(--accent-hover);
+  font-weight: 700;
+}
+
+/* ==========================
+   AVISOS
+========================== */
+
+#dashboard-announcements {
+  display: grid;
+  gap: 16px;
 }
 
 .announcement-card {
-
-  padding: 1.5rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 16px;
+  padding: 20px;
 }
 
-.announcement-top {
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  margin-bottom: 1rem;
-}
-
-.announcement-card h3 {
-
-  font-size: 1.1rem;
-
-  margin-bottom: 0.75rem;
-}
-
-.announcement-card p {
-
-  color: var(--text-light);
-
-  line-height: 1.7;
-}
-
-/* ───────────────────────────────────── */
-/* NEXT SESSION */
-/* ───────────────────────────────────── */
-
-.next-session-card {
-
-  padding: 2rem;
-}
-
-.next-session-header {
-
-  margin-bottom: 1rem;
-}
-
-.next-session-card h2 {
-
-  font-size: 0.95rem;
-
-  color: var(--primary);
-
-  margin-bottom: 0.5rem;
-}
-
-.next-session-card h3 {
-
-  font-size: 1.5rem;
-
-  letter-spacing: -0.03em;
-
-  margin-bottom: 1rem;
-}
-
-.next-session-card p {
-
-  color: var(--text-light);
-
-  line-height: 1.7;
-
-  margin-bottom: 1.5rem;
-}
-
-.next-session-date {
-
-  display: inline-flex;
-  align-items: center;
-
-  padding: 0.75rem 1rem;
-
-  border-radius: 12px;
-
-  background:
-    rgba(37,99,235,0.08);
-
-  color: var(--primary);
-
+.announcement-title {
+  margin-bottom: 8px;
   font-weight: 600;
-
-  font-size: 0.92rem;
 }
 
-/* ───────────────────────────────────── */
-/* STATS */
-/* ───────────────────────────────────── */
+.announcement-message {
+  color: var(--text-soft);
+}
 
-.dashboard-stats-grid {
+/* ==========================
+   ACCIONES
+========================== */
 
+#dashboard-actions {
   display: grid;
-
-  grid-template-columns:
-    repeat(auto-fit, minmax(220px, 1fr));
-
-  gap: 1.25rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
 }
 
-.stat-card {
+.quick-action-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  text-decoration: none;
+  color: var(--text);
+  transition: 0.25s;
+}
 
-  padding: 1.5rem;
+.quick-action-card:hover {
+  background: var(--surface-hover);
+  transform: translateY(-2px);
+}
 
+.quick-action-icon {
+  font-size: 2rem;
+  margin-bottom: 12px;
+}
+
+.quick-action-label {
+  font-weight: 600;
+}
+
+/* ==========================
+   SESIONES
+========================== */
+
+#dashboard-recent-sessions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.session-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+}
+
+.session-card-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.session-number {
+  font-weight: 700;
+}
+
+.session-status {
+  font-size: 0.85rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.session-status-available {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--success);
+}
+
+.session-status-completed {
+  background: rgba(14, 165, 233, 0.12);
+  color: var(--accent-hover);
+}
+
+.session-title {
+  margin-bottom: 10px;
+}
+
+.session-description {
+  color: var(--text-soft);
+  line-height: 1.6;
+}
+
+/* ==========================
+   RESPONSIVE
+========================== */
+
+@media (max-width: 1100px) {
+  .dashboard-top-grid {
+    grid-template-columns: 1fr;
+  }
+
+  #dashboard-actions {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-title {
+    font-size: 1.6rem;
+  }
+
+  .dashboard-welcome-card {
+    padding: 24px;
+  }
+
+  #dashboard-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================
+   QUESTIONNAIRE
+========================== */
+
+.questionnaire-widget {
   display: flex;
   flex-direction: column;
 
-  gap: 0.5rem;
+  gap: 16px;
 }
 
-.stat-number {
+.questionnaire-status {
+  display: inline-flex;
 
-  font-size: 2.2rem;
+  align-self: flex-start;
+
+  padding: 6px 12px;
+
+  border-radius: 999px;
+
+  background: rgba(245, 158, 11, 0.12);
+
+  color: #b45309;
+
+  font-size: 0.85rem;
+
+  font-weight: 600;
+}
+
+.questionnaire-title {
+  font-size: 1.2rem;
+
   font-weight: 700;
-
-  letter-spacing: -0.04em;
 }
 
-.stat-label {
+.questionnaire-description {
+  color: var(--color-text-soft);
 
-  color: var(--text-light);
-
-  font-size: 0.95rem;
-}
-
-/* ───────────────────────────────────── */
-/* SKELETON */
-/* ───────────────────────────────────── */
-
-.skeleton-card {
-
-  padding: 1.5rem;
-}
-
-/* ───────────────────────────────────── */
-/* RESPONSIVE */
-/* ───────────────────────────────────── */
-
-@media (max-width: 700px) {
-
-  .dashboard-title {
-
-    font-size: 1.7rem;
-  }
-
-  .next-session-card,
-  .dashboard-welcome-card {
-
-    padding: 1.5rem;
-  }
-
+  line-height: 1.7;
 }
